@@ -1,4 +1,4 @@
-import * as Location from 'expo-location';
+import { LocationManager } from '@maplibre/maplibre-react-native';
 import {
   createContext,
   type ReactNode,
@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { PermissionsAndroid, Platform } from 'react-native';
 
 import type { Coords } from '../types';
 import { toShared } from '../utils/geo';
@@ -39,30 +40,30 @@ export function LocationProvider({
 
   useEffect(() => {
     if (!enabled) return;
-    let sub: Location.LocationSubscription | null = null;
     let alive = true;
+    // Localisation fournie par MapLibre : LocationManager d'Android / CoreLocation d'iOS,
+    // sans Google Play Services.
+    const onUpdate = (loc: GeoPosition) => {
+      if (alive) setCoords(pick(loc));
+    };
 
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
+      const granted = await requestPermission();
       if (!alive) return;
-      if (status !== 'granted') {
+      if (!granted) {
         setPermission('denied');
         return;
       }
       setPermission('granted');
-      const last = await Location.getLastKnownPositionAsync();
+      LocationManager.setMinDisplacement(30);
+      const last = await LocationManager.getCurrentPosition();
       if (alive && last) setCoords(pick(last));
-      const s = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.Balanced, distanceInterval: 30, timeInterval: 10_000 },
-        (loc) => setCoords(pick(loc))
-      );
-      if (alive) sub = s;
-      else s.remove();
+      if (alive) LocationManager.addListener(onUpdate);
     })().catch(() => setPermission('denied'));
 
     return () => {
       alive = false;
-      sub?.remove();
+      LocationManager.removeListener(onUpdate);
     };
   }, [enabled]);
 
@@ -81,9 +82,23 @@ export function LocationProvider({
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
 }
 
-const pick = (l: Location.LocationObject): Coords => ({
+type GeoPosition = { coords: { latitude: number; longitude: number } };
+
+const pick = (l: GeoPosition): Coords => ({
   latitude: l.coords.latitude,
   longitude: l.coords.longitude,
 });
+
+/** Position « au premier plan » uniquement. Android : la position approximative suffit. */
+async function requestPermission(): Promise<boolean> {
+  if (Platform.OS === 'android') {
+    const res = await PermissionsAndroid.requestMultiple([
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+    ]);
+    return Object.values(res).includes(PermissionsAndroid.RESULTS.GRANTED);
+  }
+  return LocationManager.requestPermissions();
+}
 
 export const useLocation = () => useContext(LocationContext);

@@ -2,7 +2,8 @@
 
 Application mobile open source, gratuite et anonyme pour les manifestations : chat local, carte
 collaborative, fiches juridiques hors ligne et purge d'urgence. React Native + Expo (SDK 58) +
-TypeScript, pour Android et iOS.
+TypeScript, pour Android et iOS. 100 % open source : carte MapLibre + OpenStreetMap, aucune clé
+d'API, aucune dépendance aux Google Play Services.
 
 ## Principes
 
@@ -22,7 +23,7 @@ TypeScript, pour Android et iOS.
 | Accueil / anonymat / rôle | `src/screens/OnboardingScreen.tsx` | Pseudo, rôle (Manifestant·e, Street medic, Ravitaillement, Protection), main |
 | Réglages | `src/screens/SettingsScreen.tsx` | Main, rôle, partage de position |
 | Chat local | `src/screens/ChatScreen.tsx`, `src/services/chatSocket.ts` | WebSocket, reconnexion auto, messages rapides en un tap |
-| Carte | `src/screens/MapScreen.tsx`, `src/services/api.ts` | `react-native-maps`, signalements Danger / Nasse / Soins / Ravitaillement, expiration après 1 h |
+| Carte | `src/screens/MapScreen.tsx`, `src/services/api.ts` | MapLibre + OpenFreeMap (OpenStreetMap), signalements Danger / Nasse / Soins / Ravitaillement, expiration après 1 h |
 | Droits (wiki hors ligne) | `src/screens/WikiScreen.tsx`, `src/data/wiki.json` | Embarqué dans l'app, recherche en bas d'écran |
 | Purge d'urgence | `src/components/PanicButton.tsx` | Maintenir 0,8 s : coupe le réseau, vide la mémoire, `AsyncStorage.clear()`, retour à l'accueil |
 
@@ -45,8 +46,8 @@ cp .env.example .env.local     # puis renseigne tes URLs
 npx expo run:android           # ou: npx expo run:ios
 ```
 
-`react-native-maps` est un module natif : l'app ne tourne pas dans Expo Go, il faut un build de
-développement (`expo run:*`).
+MapLibre est un module natif : l'app ne tourne pas dans Expo Go, il faut un build de
+développement (`expo run:*`) ou l'APK produit par le GitHub Action.
 
 ### Configuration
 
@@ -54,9 +55,10 @@ développement (`expo run:*`).
 |---|---|
 | `EXPO_PUBLIC_WS_URL` | WebSocket du chat, ex. `wss://chat.mondomaine.org/ws` |
 | `EXPO_PUBLIC_API_URL` | API REST de la carte, ex. `https://api.mondomaine.org` |
-| `GOOGLE_MAPS_ANDROID_KEY` | Clé Google Maps SDK for Android (sans elle, la carte Android est vide) |
+| `EXPO_PUBLIC_MAP_STYLE_URL` | Optionnel. Style de carte MapLibre ; par défaut `https://tiles.openfreemap.org/styles/dark` (gratuit, sans clé, auto-hébergeable) |
 
-Le protocole attendu côté serveur est décrit dans [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
+Le protocole attendu côté serveur est décrit dans [`docs/PROTOCOL.md`](docs/PROTOCOL.md). Une
+implémentation prête à déployer (Node.js, une seule dépendance : `ws`) est dans [`server/`](server/).
 
 ### Vérifications
 
@@ -73,9 +75,10 @@ Double-clique sur `publier-github.bat`, à la racine de ce dossier. Le script :
 
 1. crée le dépôt GitHub avec `gh` (ou réutilise celui déjà configuré) et pousse tout le code,
    GitHub Action compris ;
-2. enregistre les URLs des serveurs et, en option, la clé Google Maps et le keystore Android ;
-3. pousse un tag `vX.Y.Z`, ce qui lance le build ;
-4. suit le build en direct, puis ouvre la Release.
+2. pousse un tag `vX.Y.Z` (le `v` est ajouté s'il manque), ce qui lance le build ;
+3. ouvre la page Actions du dépôt.
+
+Les URLs des serveurs se règlent avant, dans les variables du dépôt (voir plus bas).
 
 Pour publier une mise à jour, modifie le code et relance le fichier.
 
@@ -99,7 +102,8 @@ git tag v1.0.1 && git push origin v1.0.1   # dépôt dédié
 Étapes :
 
 1. **Ubuntu** : `expo prebuild` + `gradlew assembleRelease` → `app-release.apk`
-2. **macOS** : `expo prebuild` + `xcodebuild archive` non signé → `app-release.ipa`
+2. **macOS** (machine virtuelle de GitHub, aucun Mac requis chez toi) : `expo prebuild` +
+   `xcodebuild archive` non signé → `app-release.ipa`
 3. **Release GitHub** avec les deux fichiers. Si iOS échoue, l'APK est publié quand même.
 
 À configurer dans *Settings → Secrets and variables → Actions* :
@@ -107,7 +111,7 @@ git tag v1.0.1 && git push origin v1.0.1   # dépôt dédié
 | Type | Nom | Requis |
 |---|---|---|
 | Variable | `EXPO_PUBLIC_WS_URL`, `EXPO_PUBLIC_API_URL` | oui |
-| Secret | `GOOGLE_MAPS_ANDROID_KEY` | pour la carte Android |
+| Variable | `EXPO_PUBLIC_MAP_STYLE_URL` | non (OpenFreeMap par défaut) |
 | Secret | `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | recommandé (sinon clé de debug) |
 
 Créer une clé Android et l'encoder :
@@ -122,11 +126,14 @@ sans la désinstaller.
 
 ### À propos de l'IPA iOS
 
-Apple n'autorise l'installation que d'apps signées. L'IPA produit est **non signé** : il
-s'installe via AltStore ou Sideloadly (qui le re-signent avec un identifiant Apple), ou doit être
-signé avec un compte Apple Developer. Pour TestFlight / App Store, remplace l'étape
-`xcodebuild` par `npx eas-cli build --platform ios --local --output app-release.ipa` avec tes
-identifiants Apple configurés dans EAS.
+Compiler une app iOS demande Xcode, qui n'existe que sous macOS : c'est le Mac virtuel de GitHub
+qui s'en charge, gratuitement pour un dépôt public. Tu n'as besoin d'aucun ordinateur Apple.
+
+Apple n'autorise l'installation que d'apps signées. L'IPA produit est **non signé** : installe-le
+avec [AltStore](https://github.com/altstoreio/AltStore) (AltServer existe pour Windows) ou
+[SideStore](https://github.com/SideStore/SideStore), deux outils open source qui le signent avec un
+identifiant Apple gratuit. Limite d'Apple : avec un identifiant gratuit, l'app doit être re-signée
+tous les 7 jours (AltStore / SideStore le font automatiquement).
 
 ## Avertissement juridique
 

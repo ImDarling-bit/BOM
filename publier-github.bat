@@ -8,6 +8,8 @@ set "REPO=manifestation-toolkit"
 set /p "REPO=Nom du depot [manifestation-toolkit] : "
 set "VERSION=v1.0.0"
 set /p "VERSION=Version a publier [v1.0.0] : "
+rem Le GitHub Action ne se declenche que sur les tags "v*" : on ajoute le "v" s'il manque.
+if /i not "%VERSION:~0,1%"=="v" set "VERSION=v%VERSION%"
 
 if not exist ".git" git init -q -b main
 git add -A

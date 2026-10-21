@@ -1,11 +1,13 @@
 import type { ExpoConfig } from 'expo/config';
 
-// Clés et URLs injectées au build (variables d'environnement / secrets CI).
-// Rien de sensible n'est commité dans le dépôt.
-const GOOGLE_MAPS_ANDROID_KEY = process.env.GOOGLE_MAPS_ANDROID_KEY || '';
+// URLs injectées au build (variables d'environnement CI). Aucune clé d'API :
+// carte MapLibre + OpenStreetMap, localisation sans Google Play Services.
 // Version issue du tag Git en CI (toolkit-v1.2.3 → 1.2.3), numéro de build = run CI.
 const VERSION = process.env.APP_VERSION || '1.0.0';
 const BUILD_NUMBER = Number(process.env.APP_BUILD_NUMBER || 1);
+
+const LOCATION_REASON =
+  "Ta position (arrondie à ~100 m) sert à recevoir le chat local et à placer les signalements sur la carte. Elle n'est jamais utilisée en arrière-plan.";
 
 const config: ExpoConfig = {
   name: 'Manifestation Toolkit',
@@ -22,6 +24,7 @@ const config: ExpoConfig = {
     supportsTablet: false,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      NSLocationWhenInUseUsageDescription: LOCATION_REASON,
     },
   },
   android: {
@@ -41,21 +44,8 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
   },
   plugins: [
-    [
-      'expo-location',
-      {
-        locationWhenInUsePermission:
-          "Ta position (arrondie à ~100 m) sert à recevoir le chat local et à placer les signalements sur la carte. Elle n'est jamais utilisée en arrière-plan.",
-        isAndroidBackgroundLocationEnabled: false,
-        isIosBackgroundLocationEnabled: false,
-      },
-    ],
-    [
-      'react-native-maps',
-      {
-        androidGoogleMapsApiKey: GOOGLE_MAPS_ANDROID_KEY,
-      },
-    ],
+    // locationEngine "default" = LocationManager d'Android : pas de Google Play Services.
+    ['@maplibre/maplibre-react-native', { android: { locationEngine: 'default' } }],
     './plugins/withAndroidReleaseSigning',
   ],
 };

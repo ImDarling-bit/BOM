@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker, type Region } from 'react-native-maps';
+import { Camera, type CameraRef, Map, Marker, UserLocation } from '@maplibre/maplibre-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BigButton } from '../components/BigButton';
@@ -16,16 +16,16 @@ import type { Coords, Report, ReportType } from '../types';
 import { success, warning } from '../utils/haptics';
 import { newId } from '../utils/id';
 import { REPORT_TYPES, reportMeta, timeAgo } from '../utils/labels';
-import { darkMapStyle } from './mapStyle';
 
 const REFRESH_MS = 60_000;
-const DELTA = { latitudeDelta: 0.012, longitudeDelta: 0.012 };
+const ZOOM = 15;
+const lngLat = (c: Coords): [number, number] => [c.longitude, c.latitude];
 
 export function MapScreen() {
   const { profile } = useApp();
   const { coords, permission } = useLocation();
   const { row } = useHand();
-  const mapRef = useRef<MapView>(null);
+  const cameraRef = useRef<CameraRef>(null);
   const center = useRef<Coords>(coords ?? FALLBACK_COORDS);
   const centeredOnce = useRef(false);
   const loaded = useRef(false);
@@ -86,12 +86,12 @@ export function MapScreen() {
   useEffect(() => {
     if (coords && !centeredOnce.current) {
       centeredOnce.current = true;
-      mapRef.current?.animateToRegion({ ...coords, ...DELTA }, 400);
+      cameraRef.current?.easeTo({ center: lngLat(coords), zoom: ZOOM, duration: 400 });
     }
   }, [coords]);
 
   const recenter = () => {
-    if (coords) mapRef.current?.animateToRegion({ ...coords, ...DELTA }, 300);
+    if (coords) cameraRef.current?.easeTo({ center: lngLat(coords), zoom: ZOOM, duration: 300 });
     else setNotice('Position indisponible.');
   };
 
@@ -117,34 +117,48 @@ export function MapScreen() {
 
   return (
     <View style={styles.root}>
-      <MapView
-        ref={mapRef}
+      {/* MapLibre + tuiles OpenStreetMap (OpenFreeMap par défaut) : aucune clé, aucun SDK Google. */}
+      <Map
         style={StyleSheet.absoluteFill}
-        initialRegion={{ ...(coords ?? FALLBACK_COORDS), ...DELTA }}
-        onRegionChangeComplete={(r: Region) => {
-          center.current = { latitude: r.latitude, longitude: r.longitude };
+        mapStyle={CONFIG.mapStyleUrl}
+        logo={false}
+        attribution={false}
+        compass={false}
+        touchPitch={false}
+        onRegionDidChange={(e) => {
+          const [longitude, latitude] = e.nativeEvent.center;
+          center.current = { latitude, longitude };
         }}
-        showsUserLocation={permission === 'granted'}
-        showsMyLocationButton={false}
-        showsCompass={false}
-        toolbarEnabled={false}
-        customMapStyle={darkMapStyle}
-        userInterfaceStyle="dark"
       >
+        <Camera
+          ref={cameraRef}
+          initialViewState={{ center: lngLat(coords ?? FALLBACK_COORDS), zoom: ZOOM }}
+        />
+        {permission === 'granted' ? <UserLocation /> : null}
         {visible.map((r) => {
           const meta = reportMeta(r.type);
           return (
             <Marker
               key={r.id}
-              coordinate={{ latitude: r.latitude, longitude: r.longitude }}
-              title={`${meta.icon} ${meta.label}${r.pending ? ' (envoi…)' : ''}`}
-              description={`${timeAgo(r.createdAt, now)} · ${r.author}`}
-              pinColor={meta.color}
-              opacity={r.pending ? 0.6 : 1}
-            />
+              id={r.id}
+              lngLat={[r.longitude, r.latitude]}
+              anchor="center"
+              onPress={() =>
+                setNotice(
+                  `${meta.icon} ${meta.label}${r.pending ? ' (envoi…)' : ''} · ${timeAgo(r.createdAt, now)} · ${r.author}`
+                )
+              }
+            >
+              <View
+                style={[styles.pin, { borderColor: meta.color, opacity: r.pending ? 0.6 : 1 }]}
+                accessibilityLabel={meta.label}
+              >
+                <Text style={styles.pinIcon}>{meta.icon}</Text>
+              </View>
+            </Marker>
           );
         })}
-      </MapView>
+      </Map>
 
       {/* Viseur : le signalement est posé au centre de la carte. */}
       {adding ? (
@@ -163,6 +177,7 @@ export function MapScreen() {
           {permission === 'denied' ? (
             <Text style={styles.bannerWarn}>Localisation refusée : carte centrée par défaut.</Text>
           ) : null}
+          <Text style={styles.attribution}>© OpenStreetMap · OpenMapTiles · OpenFreeMap</Text>
         </View>
       </SafeAreaView>
 
@@ -236,6 +251,17 @@ const styles = StyleSheet.create({
   },
   bannerText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
   bannerWarn: { color: colors.warning, fontSize: font.small, marginTop: spacing.xs },
+  attribution: { color: colors.text, opacity: 0.6, fontSize: 11, marginTop: spacing.xs },
+  pin: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    borderWidth: 3,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pinIcon: { fontSize: 22 },
   crosshairWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   crosshair: { color: colors.primary, fontSize: 56, fontWeight: '300' },
   bottom: {

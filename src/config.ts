@@ -3,6 +3,8 @@
 export const CONFIG = {
   wsUrl: process.env.EXPO_PUBLIC_WS_URL || 'wss://chat.example.org/ws',
   apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://api.example.org',
+  /** Style de carte MapLibre (tuiles OpenStreetMap). Gratuit, sans clé ; auto-hébergeable. */
+  mapStyleUrl: process.env.EXPO_PUBLIC_MAP_STYLE_URL || 'https://tiles.openfreemap.org/styles/dark',
 
   /** Rayon du chat local et des signalements, en mètres. */
   radiusMeters: 2000,
