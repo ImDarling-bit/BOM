@@ -39,3 +39,35 @@ export function isValidCoord(lat: unknown, lng: unknown): boolean {
     Math.abs(lng) <= 180
   );
 }
+
+type LngLat = [number, number];
+
+/**
+ * Bande rectangulaire de `widthM` mètres de large entre deux points d'une rue
+ * (début et fin de la nasse). Renvoie 4 sommets [longitude, latitude].
+ */
+export function streetBand(a: LngLat, b: LngLat, widthM: number): LngLat[] {
+  const lat0 = ((a[1] + b[1]) / 2) * (Math.PI / 180);
+  const mPerDegLat = 111_320;
+  const mPerDegLng = 111_320 * Math.cos(lat0);
+  // Vecteur a→b en mètres, puis sa perpendiculaire normalisée.
+  const dx = (b[0] - a[0]) * mPerDegLng;
+  const dy = (b[1] - a[1]) * mPerDegLat;
+  const len = Math.hypot(dx, dy) || 1;
+  const ox = ((-dy / len) * widthM) / 2 / mPerDegLng;
+  const oy = ((dx / len) * widthM) / 2 / mPerDegLat;
+  return [
+    [a[0] + ox, a[1] + oy],
+    [b[0] + ox, b[1] + oy],
+    [b[0] - ox, b[1] - oy],
+    [a[0] - ox, a[1] - oy],
+  ];
+}
+
+/** Centre approximatif d'une zone (moyenne des sommets). */
+export function centroid(ring: LngLat[]): Coords {
+  return {
+    latitude: ring.reduce((s, p) => s + p[1], 0) / ring.length,
+    longitude: ring.reduce((s, p) => s + p[0], 0) / ring.length,
+  };
+}

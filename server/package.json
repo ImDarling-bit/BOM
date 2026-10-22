@@ -1,8 +1,8 @@
 {
-  "name": "manifestation-toolkit-server",
+  "name": "bom-server",
   "version": "1.0.0",
   "private": true,
-  "description": "Serveur chat local (WebSocket) + signalements (REST) du Manifestation Toolkit.",
+  "description": "Serveur chat local (WebSocket) + signalements (REST) de BOM (Boîte à Outils de Manifestation) : chat local, carte, aide, proches, panneau d'administration.",
   "type": "module",
   "main": "server.mjs",
   "scripts": {
@@ -12,6 +12,9 @@
     "node": ">=20"
   },
   "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "maplibre-gl": "^6.15.0",
+    "qrcode": "^1.5.4",
     "ws": "^8.18.0"
   },
   "license": "MIT"

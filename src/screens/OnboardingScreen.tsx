@@ -8,7 +8,8 @@ import { RolePicker } from '../components/RolePicker';
 import { Section } from '../components/Section';
 import { ThumbScroll } from '../components/ThumbScroll';
 import { useApp } from '../context/AppContext';
-import { colors, font, radius, spacing, touch } from '../theme';
+import { type Colors, font, radius, spacing, touch } from '../theme';
+import { useStyles, useTheme } from '../theme/ThemeContext';
 import type { Hand, Role } from '../types';
 import { success } from '../utils/haptics';
 
@@ -16,6 +17,8 @@ const PSEUDO_MIN = 2;
 const PSEUDO_MAX = 20;
 
 export function OnboardingScreen() {
+  const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   const { createProfile, settings } = useApp();
   const [pseudo, setPseudo] = useState('');
   const [role, setRole] = useState<Role>('user');
@@ -36,11 +39,16 @@ export function OnboardingScreen() {
         <ThumbScroll>
           <View style={styles.intro}>
             <Text style={styles.title} accessibilityRole="header">
-              Manifestation Toolkit
+              BOM
             </Text>
+            <Text style={styles.subtitle}>Boîte à Outils de Manifestation</Text>
             <Text style={styles.text}>
               Aucun compte, aucun e-mail. Ton identité est un pseudo + un code aléatoire créé sur ce
               téléphone.
+            </Text>
+            <Text style={styles.notice}>
+              Les organisateurs qui gèrent le serveur voient ton pseudo, ton rôle et ta position
+              arrondie (~100 m) tant que le partage est activé. Tu peux le couper dans les réglages.
             </Text>
           </View>
 
@@ -84,19 +92,22 @@ export function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  intro: { gap: spacing.sm },
-  title: { color: colors.primary, fontSize: font.title + 4, fontWeight: '900' },
-  text: { color: colors.text, fontSize: font.body, lineHeight: 26 },
-  input: {
-    minHeight: touch.primary,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 2,
-    borderRadius: radius.md,
-    color: colors.text,
-    fontSize: font.large,
-    paddingHorizontal: spacing.lg,
-  },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: c.bg },
+    intro: { gap: spacing.sm },
+    title: { color: c.accent, fontSize: 56, fontWeight: '900', letterSpacing: 4 },
+    subtitle: { color: c.text, fontSize: font.large, fontWeight: '800', marginTop: -spacing.sm },
+    notice: { color: c.textMuted, fontSize: font.small, lineHeight: 21 },
+    text: { color: c.text, fontSize: font.body, lineHeight: 26 },
+    input: {
+      minHeight: touch.primary,
+      backgroundColor: c.surface,
+      borderColor: c.border,
+      borderWidth: 2,
+      borderRadius: radius.md,
+      color: c.text,
+      fontSize: font.large,
+      paddingHorizontal: spacing.lg,
+    },
+  });

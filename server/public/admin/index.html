@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>BOM Control</title>
+  <link rel="stylesheet" href="/admin/vendor/maplibre/maplibre-gl.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <!-- Écran de connexion -->
+  <main id="login" class="login" hidden>
+    <form id="login-form" class="term" autocomplete="on">
+      <pre class="logo">██████   ██████  ███    ███
+██   ██ ██    ██ ████  ████
+██████  ██    ██ ██ ████ ██
+██   ██ ██    ██ ██  ██  ██
+██████   ██████  ██      ██</pre>
+      <p class="dim">// boîte à outils de manifestation — accès restreint</p>
+      <div id="step-pass">
+        <label>identifiant<input name="username" autocomplete="username" required></label>
+        <label>mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
+      </div>
+      <div id="step-totp" hidden>
+        <label>code de l'appli d'authentification<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7"></label>
+      </div>
+      <p id="login-error" class="err" role="alert"></p>
+      <button type="submit">&gt; connexion_</button>
+    </form>
+  </main>
+
+  <!-- Panneau -->
+  <div id="app" class="app" hidden>
+    <header class="top">
+      <div class="brand">BOM<span class="blink">_</span><span class="dim">control</span></div>
+      <div id="stats" class="stats"></div>
+      <div class="right">
+        <span id="link" class="link off">● hors ligne</span>
+        <span id="clock" class="dim"></span>
+        <button id="btn-settings" class="ghost" title="Compte et sécurité">[ compte ]</button>
+      </div>
+    </header>
+
+    <section class="map-wrap">
+      <div id="map"></div>
+      <div class="layers term-panel">
+        <div class="panel-title">calques</div>
+        <label><input type="checkbox" data-layer="people" checked> personnes</label>
+        <label><input type="checkbox" data-layer="heat"> densité</label>
+        <label><input type="checkbox" data-layer="reports" checked> signalements</label>
+        <label><input type="checkbox" data-layer="areas" checked> zones</label>
+        <label><input type="checkbox" data-layer="helps" checked> appels à l'aide</label>
+        <label><input type="checkbox" data-layer="purges" checked> purges</label>
+        <label><input type="checkbox" id="auto-fly" checked> suivre les alertes</label>
+      </div>
+      <div id="legend" class="legend term-panel"></div>
+    </section>
+
+    <aside class="side">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="feed" aria-selected="true">flux</button>
+        <button role="tab" data-tab="people">personnes <b id="n-people">0</b></button>
+        <button role="tab" data-tab="reports">carte <b id="n-reports">0</b></button>
+        <button role="tab" data-tab="alerts">alertes <b id="n-alerts">0</b></button>
+      </nav>
+      <div class="tab" id="tab-feed">
+        <div class="toolbar">
+          <input id="feed-filter" placeholder="filtrer : pseudo, mot, type…">
+          <button id="feed-pause" class="ghost">pause</button>
+        </div>
+        <ol id="feed" class="feed"></ol>
+      </div>
+      <div class="tab" id="tab-people" hidden>
+        <div class="toolbar"><input id="people-filter" placeholder="filtrer : pseudo, rôle, appareil…"></div>
+        <table class="grid"><thead><tr><th>pseudo</th><th>rôle</th><th>appareil</th><th>vu</th></tr></thead><tbody id="people"></tbody></table>
+      </div>
+      <div class="tab" id="tab-reports" hidden>
+        <table class="grid"><thead><tr><th>type</th><th>par</th><th>âge</th><th></th></tr></thead><tbody id="reports"></tbody></table>
+      </div>
+      <div class="tab" id="tab-alerts" hidden>
+        <h3>appels à l'aide</h3><ul id="helps" class="cards"></ul>
+        <h3>purges</h3><ul id="purges" class="cards"></ul>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Compte et sécurité -->
+  <dialog id="settings" class="term">
+    <div class="panel-title">compte <span id="me"></span></div>
+    <section>
+      <h3>double authentification</h3>
+      <p id="totp-state" class="dim"></p>
+      <div id="totp-setup" hidden>
+        <p class="dim">Scanne ce QR code avec une appli d'authentification (Aegis, FreeOTP, 2FAS, Google Authenticator…), puis saisis le code affiché.</p>
+        <div id="qr" class="qr"></div>
+        <p class="mono small">clé : <span id="totp-secret"></span></p>
+        <form id="totp-enable" class="row"><input name="code" inputmode="numeric" placeholder="123456" maxlength="7" required><button>activer</button></form>
+      </div>
+      <form id="totp-disable" class="row" hidden>
+        <input name="password" type="password" placeholder="mot de passe" required>
+        <input name="code" inputmode="numeric" placeholder="code 2FA" maxlength="7" required>
+        <button class="danger">désactiver</button>
+      </form>
+      <button id="totp-start" hidden>configurer la 2FA</button>
+    </section>
+    <section>
+      <h3>mot de passe</h3>
+      <form id="pass-form" class="row">
+        <input name="current" type="password" placeholder="actuel" autocomplete="current-password" required>
+        <input name="next" type="password" placeholder="nouveau (12+)" autocomplete="new-password" minlength="12" required>
+        <button>changer</button>
+      </form>
+    </section>
+    <section>
+      <h3>journal d'audit</h3>
+      <ol id="audit" class="feed small"></ol>
+    </section>
+    <p id="settings-msg" class="err" role="status"></p>
+    <div class="row end">
+      <button id="btn-logout" class="danger">déconnexion</button>
+      <button id="btn-close">fermer</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/admin/admin.js"></script>
+</body>
+</html>

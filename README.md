@@ -1,4 +1,4 @@
-# Manifestation Toolkit
+# BOM — Boîte à Outils de Manifestation
 
 Application mobile open source, gratuite et anonyme pour les manifestations : chat local, carte
 collaborative, fiches juridiques hors ligne et purge d'urgence. React Native + Expo (SDK 58) +
@@ -13,8 +13,12 @@ d'API, aucune dépendance aux Google Play Services.
   l'écran ; le haut ne contient que de l'information.
 - **Main maîtresse.** Réglage Gaucher / Droitier : le bouton PURGE, les boutons principaux
   (Envoyer, Signaler, Retour) et l'onglet le plus important passent du côté du pouce.
-- **Lisible.** Mode sombre permanent (`#121212`), fort contraste, texte ≥ 18 px, cibles tactiles
-  ≥ 56 px (64 px pour les actions principales), retour haptique.
+- **Lisible.** Clair ou sombre selon le téléphone, contraste recalculé quelle que soit la couleur
+  d'accent, texte ≥ 18 px, cibles tactiles ≥ 56 px (64 px pour les actions principales), retour
+  haptique.
+- **À tes couleurs.** Accent jaune par défaut, n'importe quelle couleur, ou un thème drapeau
+  (Palestine, fierté LGBT, trans, bi, non-binaire, lesbienne, pan, asexuel·le, rouge & noir,
+  féministe, écologie).
 
 ## Modules
 
@@ -23,9 +27,14 @@ d'API, aucune dépendance aux Google Play Services.
 | Accueil / anonymat / rôle | `src/screens/OnboardingScreen.tsx` | Pseudo, rôle (Manifestant·e, Street medic, Ravitaillement, Protection), main |
 | Réglages | `src/screens/SettingsScreen.tsx` | Main, rôle, partage de position |
 | Chat local | `src/screens/ChatScreen.tsx`, `src/services/chatSocket.ts` | WebSocket, reconnexion auto, messages rapides en un tap |
-| Carte | `src/screens/MapScreen.tsx`, `src/services/api.ts` | MapLibre + OpenFreeMap (OpenStreetMap), signalements Danger / Nasse / Soins / Ravitaillement, expiration après 1 h |
+| Carte | `src/screens/MapScreen.tsx`, `src/services/api.ts` | MapLibre + OpenFreeMap (OpenStreetMap). Points : Danger, Lacrymo, Soins, Ravitaillement, Test. Zones dessinées : Nasse (bande le long d'une rue), Zone sûre, Zone de danger |
+| Appel à l'aide | `src/components/HelpSheet.tsx`, `src/context/FieldContext.tsx` | Choisir qui prévenir (street medics, ravitaillement, protection, tout le monde) : alerte + vibration chez les personnes concernées à moins de 2 km |
+| Proches | `src/components/FriendsSection.tsx` | Partage de position précise par code ; si un proche purge son téléphone, alerte avec sa dernière position |
+| Apparence | `src/theme/`, `src/components/ThemePicker.tsx` | Clair/sombre automatique, couleur libre, thèmes drapeaux |
+| Mises à jour | `src/services/update.ts` | À l'ouverture, compare la version à la dernière Release GitHub et propose de mettre à jour |
+| Panneau d'administration | `server/public/admin/` | Web uniquement, comptes en base SQLite, double authentification TOTP, carte et flux en direct |
 | Droits (wiki hors ligne) | `src/screens/WikiScreen.tsx`, `src/data/wiki.json` | Embarqué dans l'app, recherche en bas d'écran |
-| Purge d'urgence | `src/components/PanicButton.tsx` | Maintenir 0,8 s : coupe le réseau, vide la mémoire, `AsyncStorage.clear()`, retour à l'accueil |
+| Purge d'urgence | `src/components/PanicButton.tsx` | Maintenir 0,8 s : prévient les proches, coupe le réseau, vide la mémoire, `AsyncStorage.clear()`, retour à l'accueil |
 
 La règle de placement se trouve dans `src/hooks/useHand.ts` : dans une rangée, les enfants sont
 écrits `[secondaire…, PRINCIPAL]` et `flexDirection` vaut `row` (droitier) ou `row-reverse`
@@ -33,8 +42,9 @@ La règle de placement se trouve dans `src/hooks/useHand.ts` : dans une rangée,
 
 ### Ce que la purge efface (et n'efface pas)
 
-Elle efface le profil, les réglages, l'historique du chat et le cache de la carte. Elle
-n'efface **pas** l'app elle-même, les fiches juridiques (publiques, intégrées à l'app), le cache
+Juste avant d'effacer, elle envoie ta dernière position aux proches qui suivent ton code (et au
+panneau d'administration, arrondie). Elle efface ensuite le profil, les réglages, les proches,
+l'historique du chat et le cache de la carte. Elle n'efface **pas** l'app elle-même, les fiches juridiques (publiques, intégrées à l'app), le cache
 de tuiles de la carte du système, ni ce que les serveurs ont déjà reçu.
 
 ## Démarrer
@@ -57,8 +67,15 @@ développement (`expo run:*`) ou l'APK produit par le GitHub Action.
 | `EXPO_PUBLIC_API_URL` | API REST de la carte, ex. `https://api.mondomaine.org` |
 | `EXPO_PUBLIC_MAP_STYLE_URL` | Optionnel. Style de carte MapLibre ; par défaut `https://tiles.openfreemap.org/styles/dark` (gratuit, sans clé, auto-hébergeable) |
 
-Le protocole attendu côté serveur est décrit dans [`docs/PROTOCOL.md`](docs/PROTOCOL.md). Une
-implémentation prête à déployer (Node.js, une seule dépendance : `ws`) est dans [`server/`](server/).
+Le protocole attendu côté serveur est décrit dans [`docs/PROTOCOL.md`](docs/PROTOCOL.md). Le
+serveur prêt à déployer (Node.js : WebSocket, API de la carte, panneau d'administration) est dans
+[`server/`](server/). Comptes admin : `node server/admin-cli.mjs add <identifiant>`.
+
+### Alertes et notifications
+
+Les alertes (appel à l'aide, purge d'un proche, mise à jour) s'affichent dans l'app avec une
+vibration, **tant que l'app est ouverte**. Les notifications système en arrière-plan exigeraient
+Firebase (Google) ou les serveurs d'Apple : volontairement non utilisés.
 
 ### Vérifications
 

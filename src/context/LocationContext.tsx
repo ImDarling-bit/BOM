@@ -28,11 +28,17 @@ const LocationContext = createContext<LocationValue>({
   permission: 'unknown',
 });
 
+/**
+ * `enabled` : le GPS est utilisé (carte, proches).
+ * `share` : la position arrondie est envoyée au serveur (chat local, carte).
+ */
 export function LocationProvider({
   enabled,
+  share,
   children,
 }: {
   enabled: boolean;
+  share: boolean;
   children: ReactNode;
 }) {
   const [coords, setCoords] = useState<Coords | null>(null);
@@ -67,9 +73,9 @@ export function LocationProvider({
     };
   }, [enabled]);
 
-  // Partage désactivé : aucune position n'est exposée, même en mémoire.
+  // GPS désactivé : aucune position n'est exposée, même en mémoire.
   const visibleCoords = enabled ? coords : null;
-  const shared = useMemo(() => toShared(visibleCoords), [visibleCoords]);
+  const shared = useMemo(() => (share ? toShared(visibleCoords) : null), [share, visibleCoords]);
   // On ne recrée la valeur partagée que si la position arrondie change,
   // pour éviter de spammer le serveur à chaque petit déplacement.
   const sharedKey = shared ? `${shared.latitude},${shared.longitude}` : '';

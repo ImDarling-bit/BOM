@@ -1,5 +1,5 @@
 @echo off
-rem Manifestation Toolkit : cree le depot GitHub, pousse le code et lance le GitHub Action.
+rem BOM (Boite a Outils de Manifestation) : cree le depot GitHub, pousse le code et lance le GitHub Action.
 rem A placer a la racine du dossier de l'app (a cote de package.json).
 setlocal
 cd /d "%~dp0"
@@ -13,7 +13,7 @@ if /i not "%VERSION:~0,1%"=="v" set "VERSION=v%VERSION%"
 
 if not exist ".git" git init -q -b main
 git add -A
-git commit -q -m "Manifestation Toolkit %VERSION%"
+git commit -q -m "BOM %VERSION%"
 
 git remote get-url origin >nul 2>&1 || gh repo create "%REPO%" --public --source . --remote origin || goto :fail
 git push -u origin HEAD || goto :fail

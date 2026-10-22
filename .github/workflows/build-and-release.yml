@@ -1,4 +1,4 @@
-name: Manifestation Toolkit — Build & Release
+name: BOM — Build & Release
 
 # Déclenché par les tags `v*` (ex. v1.0.0).
 on:
@@ -18,6 +18,8 @@ env:
   # Optionnel : style de carte auto-hébergé (sinon OpenFreeMap, gratuit et sans clé).
   EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.EXPO_PUBLIC_MAP_STYLE_URL }}
   APP_BUILD_NUMBER: ${{ github.run_number }}
+  # Mises à jour : l'app compare sa version à la dernière Release de ce dépôt.
+  EXPO_PUBLIC_UPDATE_REPO: ${{ github.repository }}
 
 jobs:
   android:
@@ -31,6 +33,7 @@ jobs:
           V="${GITHUB_REF_NAME#v}"
           [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || V="1.0.0"
           echo "APP_VERSION=$V" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_APP_VERSION=$V" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
@@ -100,6 +103,7 @@ jobs:
           V="${GITHUB_REF_NAME#v}"
           [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || V="1.0.0"
           echo "APP_VERSION=$V" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_APP_VERSION=$V" >> "$GITHUB_ENV"
 
       - uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -164,7 +168,7 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          name: Manifestation Toolkit ${{ github.ref_name }}
+          name: BOM ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           files: |
             artifacts/app-release.apk

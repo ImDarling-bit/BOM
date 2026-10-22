@@ -18,12 +18,17 @@ import {
   saveProfile,
   saveSettings,
 } from '../storage/storage';
-import type { Hand, Profile, Role, Settings } from '../types';
+import type { Coords, Hand, Profile, Role, Settings } from '../types';
 import { newId, tagFromUuid } from '../utils/id';
 
 export const DEFAULT_SETTINGS: Settings = {
   hand: 'right',
   shareLocation: true,
+  shareWithFriends: false,
+  shareCode: null,
+  friends: [],
+  themeId: 'default',
+  customAccent: null,
 };
 
 interface AppValue {
@@ -35,7 +40,8 @@ interface AppValue {
   createProfile: (pseudo: string, role: Role, hand: Hand) => Promise<void>;
   updateProfile: (patch: Partial<Pick<Profile, 'pseudo' | 'role'>>) => void;
   updateSettings: (patch: Partial<Settings>) => void;
-  panic: () => Promise<void>;
+  /** Purge d'urgence. `lastPosition` est envoyée aux proches juste avant. */
+  panic: (lastPosition: Coords | null) => Promise<void>;
 }
 
 const AppContext = createContext<AppValue | null>(null);
@@ -91,12 +97,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void saveSettings(next);
   }, []);
 
-  const panic = useCallback(async () => {
-    // 1. Couper le réseau, 2. vider l'état en mémoire (l'UI repart à zéro
-    // immédiatement), 3. effacer le stockage du téléphone.
+  const panic = useCallback(async (lastPosition: Coords | null) => {
+    // 0. Prévenir les proches (si connecté), 1. couper le réseau, 2. vider
+    // l'état en mémoire (l'UI repart à zéro immédiatement), 3. effacer le stockage.
+    chatSocket.sendPanic(lastPosition);
     chatSocket.shutdown();
     setProfile(null);
-    setSettings(DEFAULT_SETTINGS);
+    // L'apparence n'identifie personne : on la garde pour ne pas trahir la purge.
+    setSettings({
+      ...DEFAULT_SETTINGS,
+      themeId: settingsRef.current.themeId,
+      customAccent: settingsRef.current.customAccent,
+      hand: settingsRef.current.hand,
+    });
     setSessionKey((k) => k + 1);
     await purgeAll();
   }, []);

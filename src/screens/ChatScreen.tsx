@@ -19,17 +19,18 @@ import { useChat } from '../context/ChatContext';
 import { useLocation } from '../context/LocationContext';
 import { useHand } from '../hooks/useHand';
 import { chatSocket, type SocketStatus } from '../services/chatSocket';
-import { colors, font, radius, spacing, touch } from '../theme';
+import { type Colors, font, radius, spacing, touch } from '../theme';
+import { useStyles, useTheme } from '../theme/ThemeContext';
 import type { ChatMessage, Coords } from '../types';
 import { distanceMeters, formatDistance } from '../utils/geo';
 import { tap, warning } from '../utils/haptics';
 import { QUICK_MESSAGES, roleIcon, timeAgo } from '../utils/labels';
 
-const STATUS: Record<SocketStatus, { label: string; color: string }> = {
-  online: { label: 'En ligne', color: colors.success },
-  connecting: { label: 'Connexion…', color: colors.warning },
-  offline: { label: 'Hors ligne', color: colors.danger },
-};
+const statusInfo = (c: Colors): Record<SocketStatus, { label: string; color: string }> => ({
+  online: { label: 'En ligne', color: c.success },
+  connecting: { label: 'Connexion…', color: c.warning },
+  offline: { label: 'Hors ligne', color: c.danger },
+});
 
 export function useSocketStatus(): SocketStatus {
   return useSyncExternalStore(
@@ -39,6 +40,8 @@ export function useSocketStatus(): SocketStatus {
 }
 
 export function ChatScreen() {
+  const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   const { profile } = useApp();
   const { coords } = useLocation();
   const { row, isRight } = useHand();
@@ -70,7 +73,12 @@ export function ChatScreen() {
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScreenHeader
         title="Chat local"
-        right={<StatusDot label={STATUS[status].label} color={STATUS[status].color} />}
+        right={
+          <StatusDot
+            label={statusInfo(colors)[status].label}
+            color={statusInfo(colors)[status].color}
+          />
+        }
       />
       <Text style={styles.subtitle}>
         Messages dans un rayon de {CONFIG.radiusMeters / 1000} km · position arrondie à ~100 m
@@ -85,9 +93,7 @@ export function ChatScreen() {
           renderItem={({ item }) => (
             <Bubble msg={item} mine={item.author === me} here={coords} isRight={isRight} />
           )}
-          ListEmptyComponent={
-            <Text style={styles.empty}>{"Aucun message pour l'instant."}</Text>
-          }
+          ListEmptyComponent={<Text style={styles.empty}>{"Aucun message pour l'instant."}</Text>}
         />
 
         {/* Zone du pouce : messages rapides + saisie */}
@@ -152,11 +158,10 @@ function Bubble({
   here: Coords | null;
   isRight: boolean;
 }) {
+  const styles = useStyles(makeStyles);
   const where =
     here && msg.latitude !== undefined && msg.longitude !== undefined
-      ? formatDistance(
-          distanceMeters(here, { latitude: msg.latitude, longitude: msg.longitude })
-        )
+      ? formatDistance(distanceMeters(here, { latitude: msg.latitude, longitude: msg.longitude }))
       : null;
   return (
     <View
@@ -178,49 +183,55 @@ function Bubble({
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  subtitle: { color: colors.textMuted, fontSize: font.small, paddingHorizontal: spacing.lg },
-  list: { padding: spacing.lg, gap: spacing.sm },
-  empty: { color: colors.textMuted, fontSize: font.body, textAlign: 'center', padding: spacing.xl },
-  bubble: { maxWidth: '85%', borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
-  bubbleMine: { backgroundColor: colors.surfaceHigh, borderWidth: 2, borderColor: colors.primary },
-  bubbleOther: { backgroundColor: colors.surface },
-  meta: { color: colors.textMuted, fontSize: font.small, fontWeight: '700' },
-  text: { color: colors.text, fontSize: font.body, lineHeight: 25 },
-  composer: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
-    backgroundColor: colors.bg,
-  },
-  error: { color: colors.warning, fontSize: font.small, fontWeight: '700', paddingHorizontal: spacing.lg },
-  quick: { gap: spacing.sm, paddingHorizontal: spacing.lg },
-  chip: {
-    minHeight: touch.min,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.pill,
-    borderWidth: 2,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  chipText: { color: colors.text, fontSize: font.body, fontWeight: '700' },
-  pressed: { opacity: 0.6 },
-  inputRow: { gap: spacing.sm, paddingHorizontal: spacing.lg, alignItems: 'flex-end' },
-  input: {
-    flex: 1,
-    minHeight: touch.primary,
-    maxHeight: 120,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 2,
-    borderRadius: radius.md,
-    color: colors.text,
-    fontSize: font.body,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  send: { minWidth: 110 },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: c.bg },
+    subtitle: { color: c.textMuted, fontSize: font.small, paddingHorizontal: spacing.lg },
+    list: { padding: spacing.lg, gap: spacing.sm },
+    empty: { color: c.textMuted, fontSize: font.body, textAlign: 'center', padding: spacing.xl },
+    bubble: { maxWidth: '85%', borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
+    bubbleMine: { backgroundColor: c.surfaceHigh, borderWidth: 2, borderColor: c.accent },
+    bubbleOther: { backgroundColor: c.surface },
+    meta: { color: c.textMuted, fontSize: font.small, fontWeight: '700' },
+    text: { color: c.text, fontSize: font.body, lineHeight: 25 },
+    composer: {
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+      backgroundColor: c.bg,
+    },
+    error: {
+      color: c.warning,
+      fontSize: font.small,
+      fontWeight: '700',
+      paddingHorizontal: spacing.lg,
+    },
+    quick: { gap: spacing.sm, paddingHorizontal: spacing.lg },
+    chip: {
+      minHeight: touch.min,
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.pill,
+      borderWidth: 2,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+    },
+    chipText: { color: c.text, fontSize: font.body, fontWeight: '700' },
+    pressed: { opacity: 0.6 },
+    inputRow: { gap: spacing.sm, paddingHorizontal: spacing.lg, alignItems: 'flex-end' },
+    input: {
+      flex: 1,
+      minHeight: touch.primary,
+      maxHeight: 120,
+      backgroundColor: c.surface,
+      borderColor: c.border,
+      borderWidth: 2,
+      borderRadius: radius.md,
+      color: c.text,
+      fontSize: font.body,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    send: { minWidth: 110 },
+  });

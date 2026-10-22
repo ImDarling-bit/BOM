@@ -10,13 +10,14 @@ const LOCATION_REASON =
   "Ta position (arrondie à ~100 m) sert à recevoir le chat local et à placer les signalements sur la carte. Elle n'est jamais utilisée en arrière-plan.";
 
 const config: ExpoConfig = {
-  name: 'Manifestation Toolkit',
-  slug: 'manifestation-toolkit',
+  // BOM : Boîte à Outils de Manifestation.
+  name: 'BOM',
+  slug: 'bom',
   version: VERSION,
   orientation: 'portrait',
   icon: './assets/icon.png',
-  // Mode sombre permanent : l'app ignore le thème du système.
-  userInterfaceStyle: 'dark',
+  // Clair ou sombre selon le réglage du téléphone.
+  userInterfaceStyle: 'automatic',
   backgroundColor: '#121212',
   ios: {
     bundleIdentifier: 'org.manifestationtoolkit.app',
@@ -37,7 +38,8 @@ const config: ExpoConfig = {
       monochromeImage: './assets/android-icon-monochrome.png',
     },
     // Uniquement la localisation au premier plan : jamais en arrière-plan.
-    permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION'],
+    // VIBRATE : alertes (appel à l'aide, purge d'un proche) sans notifications Google.
+    permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'VIBRATE'],
     blockedPermissions: ['ACCESS_BACKGROUND_LOCATION'],
     // Pas de sauvegarde cloud Android des données locales (anonymat).
     allowBackup: false,

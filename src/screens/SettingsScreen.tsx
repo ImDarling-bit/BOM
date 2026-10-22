@@ -1,22 +1,40 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BigButton } from '../components/BigButton';
+import { FriendsSection } from '../components/FriendsSection';
 import { HandPicker } from '../components/HandPicker';
 import { RolePicker } from '../components/RolePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Section } from '../components/Section';
+import { ThemePicker } from '../components/ThemePicker';
 import { ThumbScroll } from '../components/ThumbScroll';
 import { CONFIG } from '../config';
 import { useApp } from '../context/AppContext';
 import { useLocation } from '../context/LocationContext';
-import { colors, font, radius, spacing } from '../theme';
+import { checkForUpdate } from '../services/update';
+import { type Colors, font, radius, spacing } from '../theme';
+import { useStyles } from '../theme/ThemeContext';
 import { roleIcon, roleLabel } from '../utils/labels';
 
 export function SettingsScreen() {
   const { profile, settings, updateSettings, updateProfile } = useApp();
   const { permission } = useLocation();
+  const styles = useStyles(makeStyles);
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
   if (!profile) return null;
+
+  const checkUpdate = async () => {
+    setUpdateMsg('Recherche…');
+    const u = await checkForUpdate();
+    if (!u)
+      return setUpdateMsg(
+        CONFIG.updateRepo ? 'Tu as la dernière version.' : 'Vérification désactivée sur ce build.'
+      );
+    setUpdateMsg(`Version ${u.version} disponible : téléchargement…`);
+    void Linking.openURL(u.url);
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -28,26 +46,32 @@ export function SettingsScreen() {
             <Text style={styles.tag}>#{profile.tag}</Text>
           </Text>
           <Text style={styles.meta}>
-            {roleIcon(profile.role)} {roleLabel(profile.role)} · identifiant stocké uniquement sur ce
-            téléphone
+            {roleIcon(profile.role)} {roleLabel(profile.role)} · identifiant stocké uniquement sur
+            ce téléphone
           </Text>
         </View>
 
-        <Section title="Serveurs" hint="Connexion chiffrée à tes serveurs privés.">
-          <Text style={styles.mono}>{CONFIG.wsUrl}</Text>
-          <Text style={styles.mono}>{CONFIG.apiUrl}</Text>
+        <Section
+          title="Apparence"
+          hint="Clair ou sombre selon ton téléphone. Choisis ta couleur ou un drapeau."
+        >
+          <ThemePicker />
         </Section>
+
+        <FriendsSection />
 
         <Section
           title="Position"
           hint={
             permission === 'denied'
               ? 'Localisation refusée dans les réglages du téléphone.'
-              : 'Arrondie à ~100 m avant envoi. Jamais en arrière-plan.'
+              : 'Arrondie à ~100 m avant envoi au serveur. Jamais en arrière-plan.'
           }
         >
           <BigButton
-            label={settings.shareLocation ? 'Partage de position : OUI' : 'Partage de position : NON'}
+            label={
+              settings.shareLocation ? 'Chat local et carte : OUI' : 'Chat local et carte : NON'
+            }
             icon={settings.shareLocation ? '📍' : '🚫'}
             variant={settings.shareLocation ? 'selected' : 'secondary'}
             onPress={() => updateSettings({ shareLocation: !settings.shareLocation })}
@@ -64,16 +88,42 @@ export function SettingsScreen() {
         >
           <HandPicker value={settings.hand} onChange={(hand) => updateSettings({ hand })} />
         </Section>
+
+        <Section
+          title="Ce que voient les organisateurs"
+          hint="Les admins du serveur voient en direct : ton pseudo, ton rôle, ta position arrondie (~100 m), tes messages du chat local, tes signalements, tes appels à l’aide et l’endroit d’une purge. Jamais ton identifiant complet ni ta position précise."
+        >
+          <Text style={styles.mono}>{CONFIG.wsUrl}</Text>
+          <Text style={styles.mono}>{CONFIG.apiUrl}</Text>
+        </Section>
+
+        <Section
+          title="Version"
+          hint={`BOM ${CONFIG.appVersion} · Boîte à Outils de Manifestation`}
+        >
+          <BigButton
+            label="Chercher une mise à jour"
+            icon="⬆️"
+            onPress={() => void checkUpdate()}
+          />
+          {updateMsg ? <Text style={styles.meta}>{updateMsg}</Text> : null}
+        </Section>
       </ThumbScroll>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  card: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.lg, gap: spacing.xs },
-  name: { color: colors.text, fontSize: font.title, fontWeight: '900' },
-  tag: { color: colors.primary },
-  meta: { color: colors.textMuted, fontSize: font.small },
-  mono: { color: colors.textMuted, fontSize: font.small, fontFamily: 'monospace' },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: c.bg },
+    card: {
+      backgroundColor: c.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      gap: spacing.xs,
+    },
+    name: { color: c.text, fontSize: font.title, fontWeight: '900' },
+    tag: { color: c.accent },
+    meta: { color: c.textMuted, fontSize: font.small },
+    mono: { color: c.textMuted, fontSize: font.small, fontFamily: 'monospace' },
+  });

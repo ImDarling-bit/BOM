@@ -2,8 +2,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useHand } from '../hooks/useHand';
-import { colors, spacing, touch } from '../theme';
+import { type Colors, radius, spacing, touch } from '../theme';
+import { useStyles } from '../theme/ThemeContext';
 import { tap } from '../utils/haptics';
+import { FlagStripe } from './FlagStripe';
 import { PanicButton } from './PanicButton';
 
 export type TabId = 'map' | 'chat' | 'wiki' | 'settings';
@@ -32,79 +34,99 @@ export function ThumbTabBar({
 }) {
   const { row } = useHand();
   const insets = useSafeAreaInsets();
+  const styles = useStyles(makeStyles);
   // Ordre [moins prioritaire … plus prioritaire, PURGE] + `row` = PURGE sous le pouce.
   const ordered = [...TABS].reverse();
 
   return (
-    <View
-      style={[styles.bar, { flexDirection: row, paddingBottom: Math.max(insets.bottom, spacing.sm) }]}
-      accessibilityRole="tablist"
-    >
-      {ordered.map((t) => {
-        const selected = t.id === active;
-        const badge = badges[t.id] ?? 0;
-        return (
-          <Pressable
-            key={t.id}
-            accessibilityRole="tab"
-            accessibilityLabel={badge ? `${t.label}, ${badge} nouveaux` : t.label}
-            accessibilityState={{ selected }}
-            onPress={() => {
-              tap();
-              onChange(t.id);
-            }}
-            style={({ pressed }) => [styles.tab, selected && styles.tabActive, pressed && styles.pressed]}
-          >
-            <Text style={styles.icon}>{t.icon}</Text>
-            {badge > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
-              </View>
-            ) : null}
-            <Text style={[styles.label, selected && styles.labelActive]} numberOfLines={1}>
-              {t.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-      <PanicButton />
+    <View style={styles.wrap}>
+      <FlagStripe height={4} />
+      <View
+        style={[
+          styles.bar,
+          { flexDirection: row, paddingBottom: Math.max(insets.bottom, spacing.sm) },
+        ]}
+        accessibilityRole="tablist"
+      >
+        {ordered.map((t) => {
+          const selected = t.id === active;
+          const badge = badges[t.id] ?? 0;
+          return (
+            <Pressable
+              key={t.id}
+              accessibilityRole="tab"
+              accessibilityLabel={badge ? `${t.label}, ${badge} nouveaux` : t.label}
+              accessibilityState={{ selected }}
+              onPress={() => {
+                tap();
+                onChange(t.id);
+              }}
+              style={({ pressed }) => [
+                styles.tab,
+                selected && styles.tabActive,
+                pressed && styles.pressed,
+              ]}
+            >
+              {selected ? <View style={styles.indicator} /> : null}
+              <Text style={styles.icon}>{t.icon}</Text>
+              {badge > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+                </View>
+              ) : null}
+              <Text style={[styles.label, selected && styles.labelActive]} numberOfLines={1}>
+                {t.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+        <PanicButton />
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  bar: {
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    gap: spacing.xs,
-    alignItems: 'center',
-  },
-  tab: {
-    flex: 1,
-    minHeight: touch.primary + 8,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabActive: { backgroundColor: colors.surfaceHigh, borderWidth: 2, borderColor: colors.primary },
-  pressed: { opacity: 0.6 },
-  icon: { fontSize: 24 },
-  label: { color: colors.textMuted, fontSize: 13, fontWeight: '700', marginTop: 2 },
-  labelActive: { color: colors.primary },
-  badge: {
-    position: 'absolute',
-    top: 4,
-    right: 8,
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    paddingHorizontal: 4,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: { color: colors.onPrimary, fontSize: 12, fontWeight: '900' },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    wrap: { backgroundColor: c.surface },
+    bar: {
+      backgroundColor: c.surface,
+      paddingTop: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      gap: spacing.xs,
+      alignItems: 'center',
+    },
+    tab: {
+      flex: 1,
+      minHeight: touch.primary + 8,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    tabActive: { backgroundColor: c.surfaceHigh },
+    pressed: { opacity: 0.6 },
+    icon: { fontSize: 24 },
+    label: { color: c.textMuted, fontSize: 13, fontWeight: '700', marginTop: 2 },
+    labelActive: { color: c.accent },
+    indicator: {
+      position: 'absolute',
+      top: 4,
+      width: 22,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: c.accent,
+    },
+    badge: {
+      position: 'absolute',
+      top: 4,
+      right: 8,
+      minWidth: 22,
+      height: 22,
+      borderRadius: 11,
+      paddingHorizontal: 4,
+      backgroundColor: c.danger,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badgeText: { color: c.onDanger, fontSize: 12, fontWeight: '900' },
+  });

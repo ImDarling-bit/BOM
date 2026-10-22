@@ -1,6 +1,6 @@
 import { CONFIG } from '../config';
 import type { Coords, Report, ReportType } from '../types';
-import { parseReport } from './chatSocket';
+import { CLIENT_HEADER, parseReport } from './chatSocket';
 
 async function request(path: string, init?: RequestInit): Promise<unknown> {
   const ctrl = new AbortController();
@@ -9,7 +9,11 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
     const res = await fetch(`${CONFIG.apiUrl}${path}`, {
       ...init,
       signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-BOM-Client': CLIENT_HEADER,
+        ...init?.headers,
+      },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
@@ -26,10 +30,11 @@ export async function fetchReports(center: Coords): Promise<Report[]> {
   return data.map(parseReport).filter((r): r is Report => r !== null);
 }
 
-/** POST /reports — renvoie le signalement enregistré par le serveur. */
+/** POST /reports — un point, ou une zone (`area`). Renvoie le signalement enregistré. */
 export async function createReport(input: {
   type: ReportType;
   position: Coords;
+  area?: [number, number][];
   author: string;
 }): Promise<Report> {
   const data = await request('/reports', {
@@ -38,6 +43,7 @@ export async function createReport(input: {
       type: input.type,
       latitude: input.position.latitude,
       longitude: input.position.longitude,
+      ...(input.area ? { area: input.area } : {}),
       author: input.author,
     }),
   });

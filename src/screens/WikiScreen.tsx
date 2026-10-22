@@ -16,7 +16,8 @@ import { BigButton } from '../components/BigButton';
 import { ScreenHeader } from '../components/ScreenHeader';
 import wiki from '../data/wiki.json';
 import { useHand } from '../hooks/useHand';
-import { colors, font, radius, spacing, touch } from '../theme';
+import { type Colors, font, radius, spacing, touch } from '../theme';
+import { useStyles, useTheme } from '../theme/ThemeContext';
 import type { WikiArticle } from '../types';
 import { tap } from '../utils/haptics';
 
@@ -24,10 +25,11 @@ import { tap } from '../utils/haptics';
 // (ce sont des informations publiques).
 const ARTICLES = wiki.articles as WikiArticle[];
 
-const normalize = (s: string) =>
-  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const normalize = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 export function WikiScreen() {
+  const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const article = ARTICLES.find((a) => a.id === openId) ?? null;
@@ -47,7 +49,9 @@ export function WikiScreen() {
     const matches = ARTICLES.filter(
       (a) =>
         !q ||
-        normalize(`${a.title} ${a.summary} ${a.sections.map((s) => s.heading + ' ' + s.body).join(' ')}`).includes(q)
+        normalize(
+          `${a.title} ${a.summary} ${a.sections.map((s) => s.heading + ' ' + s.body).join(' ')}`
+        ).includes(q)
     );
     const byCat = new Map<string, WikiArticle[]>();
     matches.forEach((a) => byCat.set(a.category, [...(byCat.get(a.category) ?? []), a]));
@@ -66,7 +70,9 @@ export function WikiScreen() {
           contentContainerStyle={styles.list}
           stickySectionHeadersEnabled={false}
           keyboardShouldPersistTaps="handled"
-          renderSectionHeader={({ section }) => <Text style={styles.category}>{section.title}</Text>}
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.category}>{section.title}</Text>
+          )}
           renderItem={({ item }) => (
             <Pressable
               onPress={() => {
@@ -104,6 +110,7 @@ export function WikiScreen() {
 }
 
 function ArticleView({ article, onClose }: { article: WikiArticle; onClose: () => void }) {
+  const styles = useStyles(makeStyles);
   const { row } = useHand();
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -126,58 +133,66 @@ function ArticleView({ article, onClose }: { article: WikiArticle; onClose: () =
       </ScrollView>
       <View style={[styles.articleActions, { flexDirection: row }]}>
         <View style={styles.spacer} />
-        <BigButton label="Retour aux fiches" icon="←" variant="primary" large onPress={onClose} style={styles.back} />
+        <BigButton
+          label="Retour aux fiches"
+          icon="←"
+          variant="primary"
+          large
+          onPress={onClose}
+          style={styles.back}
+        />
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  offline: { color: colors.success, fontSize: font.small, fontWeight: '700' },
-  list: { padding: spacing.lg, gap: spacing.sm },
-  category: {
-    color: colors.primary,
-    fontSize: font.small,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: spacing.md,
-  },
-  item: {
-    minHeight: touch.primary,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.lg,
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  pressed: { opacity: 0.6 },
-  itemTitle: { color: colors.text, fontSize: font.large, fontWeight: '800' },
-  itemSummary: { color: colors.textMuted, fontSize: font.body },
-  empty: { color: colors.textMuted, fontSize: font.body, textAlign: 'center', padding: spacing.xl },
-  disclaimer: { color: colors.textMuted, fontSize: font.small, marginTop: spacing.xl, lineHeight: 21 },
-  searchBar: {
-    padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  search: {
-    minHeight: touch.min,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 2,
-    borderRadius: radius.md,
-    color: colors.text,
-    fontSize: font.body,
-    paddingHorizontal: spacing.lg,
-  },
-  article: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xl },
-  articleTitle: { color: colors.text, fontSize: font.title, fontWeight: '900' },
-  block: { gap: spacing.sm },
-  heading: { color: colors.primary, fontSize: font.large, fontWeight: '800' },
-  body: { color: colors.text, fontSize: font.body + 1, lineHeight: 28 },
-  articleActions: { padding: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
-  spacer: { flex: 0.15 },
-  back: { flex: 1 },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: c.bg },
+    offline: { color: c.success, fontSize: font.small, fontWeight: '700' },
+    list: { padding: spacing.lg, gap: spacing.sm },
+    category: {
+      color: c.accent,
+      fontSize: font.small,
+      fontWeight: '900',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginTop: spacing.md,
+    },
+    item: {
+      minHeight: touch.primary,
+      backgroundColor: c.surface,
+      borderRadius: radius.md,
+      padding: spacing.lg,
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    pressed: { opacity: 0.6 },
+    itemTitle: { color: c.text, fontSize: font.large, fontWeight: '800' },
+    itemSummary: { color: c.textMuted, fontSize: font.body },
+    empty: { color: c.textMuted, fontSize: font.body, textAlign: 'center', padding: spacing.xl },
+    disclaimer: { color: c.textMuted, fontSize: font.small, marginTop: spacing.xl, lineHeight: 21 },
+    searchBar: {
+      padding: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+    },
+    search: {
+      minHeight: touch.min,
+      backgroundColor: c.surface,
+      borderColor: c.border,
+      borderWidth: 2,
+      borderRadius: radius.md,
+      color: c.text,
+      fontSize: font.body,
+      paddingHorizontal: spacing.lg,
+    },
+    article: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xl },
+    articleTitle: { color: c.text, fontSize: font.title, fontWeight: '900' },
+    block: { gap: spacing.sm },
+    heading: { color: c.accent, fontSize: font.large, fontWeight: '800' },
+    body: { color: c.text, fontSize: font.body + 1, lineHeight: 28 },
+    articleActions: { padding: spacing.md, borderTopWidth: 1, borderTopColor: c.border },
+    spacer: { flex: 0.15 },
+    back: { flex: 1 },
+  });
