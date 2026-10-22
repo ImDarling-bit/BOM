@@ -7,6 +7,7 @@ import { useStyles } from '../theme/ThemeContext';
 import { tap } from '../utils/haptics';
 import { AREA_TYPES, POINT_TYPES, type ReportMeta } from '../utils/labels';
 import { BigButton } from './BigButton';
+import { Icon } from './Icon';
 
 const WIDTH = 228;
 
@@ -55,7 +56,7 @@ export function ReportMenu({
       ]}
     >
       <View style={[styles.swatch, { backgroundColor: meta.color }]} />
-      <Text style={styles.itemIcon}>{meta.icon}</Text>
+      <Icon name={meta.icon} size={22} color={meta.color} strokeWidth={2.5} />
       <Text style={[styles.itemLabel, { textAlign: isRight ? 'left' : 'right' }]} numberOfLines={1}>
         {meta.label}
       </Text>
@@ -87,7 +88,7 @@ export function ReportMenu({
           {POINT_TYPES.map(item)}
           <Text style={styles.title}>Zone · à dessiner</Text>
           {AREA_TYPES.map(item)}
-          <BigButton label="Fermer" icon="✕" onPress={onClose} style={styles.close} />
+          <BigButton label="Fermer" icon="close" onPress={onClose} style={styles.close} />
         </ScrollView>
       </Animated.View>
     </View>
@@ -129,7 +130,6 @@ const makeStyles = (c: Colors) =>
       overflow: 'hidden',
     },
     swatch: { width: 6, alignSelf: 'stretch', borderRadius: 3, marginVertical: spacing.sm },
-    itemIcon: { fontSize: 22 },
     itemLabel: { flex: 1, color: c.text, fontSize: font.body, fontWeight: '800' },
     pressed: { opacity: 0.7, transform: [{ scale: 0.98 }] },
     close: { marginTop: spacing.sm },

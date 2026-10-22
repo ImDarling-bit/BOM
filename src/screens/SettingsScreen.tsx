@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BigButton } from '../components/BigButton';
 import { FriendsSection } from '../components/FriendsSection';
 import { HandPicker } from '../components/HandPicker';
+import { Icon } from '../components/Icon';
 import { RolePicker } from '../components/RolePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Section } from '../components/Section';
@@ -15,13 +16,14 @@ import { useApp } from '../context/AppContext';
 import { useLocation } from '../context/LocationContext';
 import { checkForUpdate } from '../services/update';
 import { type Colors, font, radius, spacing } from '../theme';
-import { useStyles } from '../theme/ThemeContext';
+import { useStyles, useTheme } from '../theme/ThemeContext';
 import { roleIcon, roleLabel } from '../utils/labels';
 
 export function SettingsScreen() {
   const { profile, settings, updateSettings, updateProfile } = useApp();
   const { permission } = useLocation();
   const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
   if (!profile) return null;
 
@@ -45,10 +47,12 @@ export function SettingsScreen() {
             {profile.pseudo}
             <Text style={styles.tag}>#{profile.tag}</Text>
           </Text>
-          <Text style={styles.meta}>
-            {roleIcon(profile.role)} {roleLabel(profile.role)} · identifiant stocké uniquement sur
-            ce téléphone
-          </Text>
+          <View style={styles.metaRow}>
+            <Icon name={roleIcon(profile.role)} size={18} color={colors.accent} strokeWidth={2.5} />
+            <Text style={[styles.meta, styles.flex]}>
+              {roleLabel(profile.role)} · identifiant stocké uniquement sur ce téléphone
+            </Text>
+          </View>
         </View>
 
         <Section
@@ -72,7 +76,7 @@ export function SettingsScreen() {
             label={
               settings.shareLocation ? 'Chat local et carte : OUI' : 'Chat local et carte : NON'
             }
-            icon={settings.shareLocation ? '📍' : '🚫'}
+            icon={settings.shareLocation ? 'pin' : 'ban'}
             variant={settings.shareLocation ? 'selected' : 'secondary'}
             onPress={() => updateSettings({ shareLocation: !settings.shareLocation })}
           />
@@ -103,7 +107,7 @@ export function SettingsScreen() {
         >
           <BigButton
             label="Chercher une mise à jour"
-            icon="⬆️"
+            icon="update"
             onPress={() => void checkUpdate()}
           />
           {updateMsg ? <Text style={styles.meta}>{updateMsg}</Text> : null}
@@ -124,6 +128,8 @@ const makeStyles = (c: Colors) =>
     },
     name: { color: c.text, fontSize: font.title, fontWeight: '900' },
     tag: { color: c.accent },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    flex: { flex: 1 },
     meta: { color: c.textMuted, fontSize: font.small },
     mono: { color: c.textMuted, fontSize: font.small, fontFamily: 'monospace' },
   });

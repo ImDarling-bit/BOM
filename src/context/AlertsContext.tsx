@@ -3,13 +3,14 @@ import { StyleSheet, Text, Vibration, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BigButton } from '../components/BigButton';
+import { Icon, type IconName } from '../components/Icon';
 import { useHand } from '../hooks/useHand';
 import { type Colors, elevation, font, radius, spacing } from '../theme';
-import { useStyles } from '../theme/ThemeContext';
+import { useStyles, useTheme } from '../theme/ThemeContext';
 
 export interface AlertAction {
   label: string;
-  icon?: string;
+  icon?: IconName;
   primary?: boolean;
   onPress?: () => void;
 }
@@ -17,7 +18,7 @@ export interface AlertAction {
 export interface AppAlert {
   id: string;
   tone: 'danger' | 'help' | 'info';
-  icon: string;
+  icon: IconName;
   title: string;
   body?: string;
   actions: AlertAction[];
@@ -71,7 +72,10 @@ function AlertSheet({
 }) {
   const styles = useStyles(makeStyles);
   const { row } = useHand();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const toneColor =
+    alert.tone === 'danger' ? colors.danger : alert.tone === 'help' ? '#B000D8' : colors.info;
   const toneStyle =
     alert.tone === 'danger' ? styles.danger : alert.tone === 'help' ? styles.help : styles.info;
 
@@ -87,7 +91,9 @@ function AlertSheet({
         accessibilityLiveRegion="assertive"
       >
         <View style={styles.head}>
-          <Text style={styles.icon}>{alert.icon}</Text>
+          <View style={[styles.iconWrap, { backgroundColor: toneColor }]}>
+            <Icon name={alert.icon} size={30} color="#FFFFFF" strokeWidth={2.5} />
+          </View>
           <View style={styles.headText}>
             <Text style={styles.title}>{alert.title}</Text>
             {alert.body ? <Text style={styles.body}>{alert.body}</Text> : null}
@@ -138,7 +144,13 @@ const makeStyles = (c: Colors) =>
     help: { borderColor: '#D500F9' },
     info: { borderColor: c.accent },
     head: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
-    icon: { fontSize: 36 },
+    iconWrap: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     headText: { flex: 1, gap: spacing.xs },
     title: { color: c.text, fontSize: font.large, fontWeight: '900' },
     body: { color: c.text, fontSize: font.body, lineHeight: 25 },

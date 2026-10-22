@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BigButton } from '../components/BigButton';
 import { HelpSheet } from '../components/HelpSheet';
+import { Icon, type IconName } from '../components/Icon';
 import { ReportMenu } from '../components/ReportMenu';
 import { CONFIG, FALLBACK_COORDS } from '../config';
 import { useApp } from '../context/AppContext';
@@ -34,6 +35,14 @@ const REFRESH_MS = 60_000;
 const ZOOM = 15;
 type LngLat = [number, number];
 const lngLat = (c: Coords): LngLat => [c.longitude, c.latitude];
+const HELP_COLOR = '#B000D8';
+
+/** Message affiché dans la zone du pouce (touché = masqué). */
+interface Notice {
+  text: string;
+  icon?: IconName;
+  color?: string;
+}
 
 /** Ce que fait la zone du pouce : rien, choisir un type, dessiner une zone, appeler à l'aide. */
 type Mode =
@@ -56,7 +65,7 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
   const loaded = useRef(false);
   const [reports, setReports] = useState<Report[]>([]);
   const [mode, setMode] = useState<Mode>({ kind: 'idle' });
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   // Horloge pour masquer les signalements expirés et rafraîchir « il y a X min ».
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -128,7 +137,7 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
 
   const recenter = () => {
     if (coords) cameraRef.current?.easeTo({ center: lngLat(coords), zoom: ZOOM, duration: 300 });
-    else setNotice('Position indisponible.');
+    else setNotice({ text: 'Position indisponible.', icon: 'pin' });
   };
 
   const author = profile ? `${profile.pseudo}#${profile.tag}` : '?';
@@ -143,11 +152,19 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
       const saved = await createReport({ type, position, area, author });
       setReports((prev) => [saved, ...prev.filter((r) => r.id !== temp.id && r.id !== saved.id)]);
       success();
-      setNotice(`${reportMeta(type).icon} ${reportMeta(type).label} signalé.`);
+      setNotice({
+        text: `${reportMeta(type).label} signalé.`,
+        icon: reportMeta(type).icon,
+        color: reportMeta(type).color,
+      });
     } catch {
       setReports((prev) => prev.filter((r) => r.id !== temp.id));
       warning();
-      setNotice('Échec de l’envoi : réseau indisponible. Réessaie.');
+      setNotice({
+        text: 'Échec de l’envoi : réseau indisponible. Réessaie.',
+        icon: 'danger',
+        color: colors.warning,
+      });
     }
   };
 
@@ -177,9 +194,11 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
   const info = (r: Report) => {
     const meta = reportMeta(r.type);
     const dist = coords ? ` · ${formatDistance(distanceMeters(coords, r))}` : '';
-    setNotice(
-      `${meta.icon} ${meta.label}${r.pending ? ' (envoi…)' : ''} · ${timeAgo(r.createdAt, now)} · ${r.author}${dist}`
-    );
+    setNotice({
+      text: `${meta.label}${r.pending ? ' (envoi…)' : ''} · ${timeAgo(r.createdAt, now)} · ${r.author}${dist}`,
+      icon: meta.icon,
+      color: meta.color,
+    });
   };
 
   const friendList = Object.values(friends);
@@ -237,7 +256,12 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
                 ]}
                 accessibilityLabel={meta.label}
               >
-                <Text style={r.area ? styles.pinIconSmall : styles.pinIcon}>{meta.icon}</Text>
+                <Icon
+                  name={meta.icon}
+                  size={r.area ? 17 : 22}
+                  color={meta.color}
+                  strokeWidth={2.6}
+                />
               </View>
             </Marker>
           );
@@ -250,13 +274,15 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
             lngLat={[h.longitude, h.latitude]}
             anchor="center"
             onPress={() =>
-              setNotice(
-                `🆘 ${h.author} cherche : ${h.roles.map(helpTargetLabel).join(', ')}${h.note ? ` « ${h.note} »` : ''} · ${timeAgo(h.createdAt, now)}`
-              )
+              setNotice({
+                text: `${h.author} cherche : ${h.roles.map(helpTargetLabel).join(', ')}${h.note ? ` « ${h.note} »` : ''} · ${timeAgo(h.createdAt, now)}`,
+                icon: 'help',
+                color: HELP_COLOR,
+              })
             }
           >
             <View style={[styles.pin, styles.helpPin]}>
-              <Text style={styles.pinIcon}>🆘</Text>
+              <Icon name="help" size={26} color={HELP_COLOR} strokeWidth={2.6} />
             </View>
           </Marker>
         ))}
@@ -267,11 +293,18 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
             id={`friend-${f.code}`}
             lngLat={[f.longitude, f.latitude]}
             anchor="bottom"
-            onPress={() => setNotice(`💚 ${f.name} · position ${timeAgo(f.ts, now)}`)}
+            onPress={() =>
+              setNotice({
+                text: `${f.name} · position ${timeAgo(f.ts, now)}`,
+                icon: 'friend',
+                color: colors.success,
+              })
+            }
           >
             <View style={styles.friend}>
+              <Icon name="friend" size={14} color={colors.success} strokeWidth={2.8} />
               <Text style={styles.friendText} numberOfLines={1}>
-                💚 {f.name.split('#')[0]}
+                {f.name.split('#')[0]}
               </Text>
             </View>
           </Marker>
@@ -286,11 +319,15 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
               lngLat={[p.longitude as number, p.latitude as number]}
               anchor="center"
               onPress={() =>
-                setNotice(`⛔ ${p.name} a purgé son téléphone ici · ${timeAgo(p.ts, now)}`)
+                setNotice({
+                  text: `${p.name} a purgé son téléphone ici · ${timeAgo(p.ts, now)}`,
+                  icon: 'purge',
+                  color: colors.danger,
+                })
               }
             >
               <View style={[styles.pin, styles.panicPin]}>
-                <Text style={styles.pinIcon}>⛔</Text>
+                <Icon name="purge" size={24} color={colors.danger} strokeWidth={2.6} />
               </View>
             </Marker>
           ))}
@@ -307,7 +344,7 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
         <View pointerEvents="none" style={styles.crosshairWrap}>
           <View style={styles.cross}>
             <View style={[styles.aimBadge, { borderColor: mode.meta.color }]}>
-              <Text style={styles.aimIcon}>{mode.meta.icon}</Text>
+              <Icon name={mode.meta.icon} size={24} color={mode.meta.color} strokeWidth={2.6} />
             </View>
             <View style={[styles.crossBar, styles.crossH, { backgroundColor: colors.accent }]} />
             <View style={[styles.crossBar, styles.crossV, { backgroundColor: colors.accent }]} />
@@ -335,7 +372,12 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
             accessibilityRole="button"
             accessibilityHint="Masquer"
           >
-            <Text style={styles.notice}>{notice}</Text>
+            <View style={styles.notice}>
+              {notice.icon ? (
+                <Icon name={notice.icon} size={22} color={notice.color} strokeWidth={2.5} />
+              ) : null}
+              <Text style={styles.noticeText}>{notice.text}</Text>
+            </View>
           </Pressable>
         ) : null}
 
@@ -343,8 +385,9 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
           <>
             {myHelp ? (
               <View style={[styles.myHelp, { flexDirection: row }]}>
+                <Icon name="help" size={22} color={HELP_COLOR} strokeWidth={2.6} />
                 <Text style={styles.myHelpText}>
-                  🆘 Appel en cours ·{' '}
+                  Appel en cours ·{' '}
                   {myHelp.notified === null
                     ? 'envoi…'
                     : `${myHelp.notified} personne(s) prévenue(s)`}
@@ -353,10 +396,15 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
               </View>
             ) : null}
             <View style={[styles.actions, { flexDirection: row }]}>
-              <BigButton label="Centrer" icon="◎" onPress={recenter} style={styles.secondary} />
+              <BigButton
+                label="Centrer"
+                icon="crosshair"
+                onPress={recenter}
+                style={styles.secondary}
+              />
               <BigButton
                 label="Aide"
-                icon="🆘"
+                icon="help"
                 variant="danger"
                 onPress={() => {
                   setNotice(null);
@@ -366,7 +414,7 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
               />
               <BigButton
                 label="Signaler"
-                icon="➕"
+                icon="plus"
                 variant="primary"
                 large
                 onPress={() => {
@@ -381,9 +429,12 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
 
         {mode.kind === 'aim' ? (
           <>
-            <Text style={styles.drawHint}>
-              {mode.meta.icon} Déplace la carte : la croix marque l’endroit exact.
-            </Text>
+            <View style={styles.hintRow}>
+              <Icon name={mode.meta.icon} size={22} color={mode.meta.color} strokeWidth={2.6} />
+              <Text style={styles.drawHint}>
+                Déplace la carte : la croix marque l’endroit exact.
+              </Text>
+            </View>
             <View style={[styles.actions, { flexDirection: row }]}>
               <BigButton
                 label="Annuler"
@@ -392,13 +443,13 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
               />
               <BigButton
                 label="Changer"
-                icon="☰"
+                icon="menu"
                 onPress={() => setMode({ kind: 'pick' })}
                 style={styles.secondary}
               />
               <BigButton
                 label="Poser ici"
-                icon="✓"
+                icon="check"
                 variant="primary"
                 large
                 onPress={() => void submit(mode.meta.id)}
@@ -410,9 +461,15 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
 
         {drawing ? (
           <>
-            <Text style={styles.drawHint}>
-              {drawing.meta.icon} {drawHint(drawing)}
-            </Text>
+            <View style={styles.hintRow}>
+              <Icon
+                name={drawing.meta.icon}
+                size={22}
+                color={drawing.meta.color}
+                strokeWidth={2.6}
+              />
+              <Text style={styles.drawHint}>{drawHint(drawing)}</Text>
+            </View>
             <View style={[styles.actions, { flexDirection: row }]}>
               <BigButton
                 label="Annuler"
@@ -421,14 +478,14 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
               />
               <BigButton
                 label="Effacer"
-                icon="↶"
+                icon="undo"
                 disabled={!drawing.points.length}
                 onPress={() => setMode({ ...drawing, points: drawing.points.slice(0, -1) })}
                 style={styles.secondary}
               />
               <BigButton
                 label="Valider"
-                icon="✓"
+                icon="check"
                 variant="primary"
                 large
                 disabled={!draftRing(drawing)}
@@ -446,7 +503,7 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
           <HelpSheet
             onDone={(msg) => {
               setMode({ kind: 'idle' });
-              if (msg) setNotice(msg);
+              if (msg) setNotice({ text: msg, icon: 'help', color: HELP_COLOR });
             }}
           />
         ) : null}
@@ -468,8 +525,7 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
 
 function bannerText(mode: Mode, count: number): string {
   if (mode.kind === 'pick') return 'Que veux-tu signaler ?';
-  if (mode.kind === 'aim')
-    return `${mode.meta.icon} ${mode.meta.label} : vise l’endroit exact avec la croix`;
+  if (mode.kind === 'aim') return `${mode.meta.label} : vise l’endroit exact avec la croix`;
   if (mode.kind === 'draw') return `${mode.meta.label} : ${mode.meta.hint.toLowerCase()}`;
   if (mode.kind === 'help') return 'Qui appeler à l’aide ? Ta position sera partagée.';
   return `${count} signalement${count > 1 ? 's' : ''} · 1 h max`;
@@ -551,11 +607,12 @@ const makeStyles = (c: Colors) =>
       ...elevation(c, 1),
     },
     pinSmall: { width: 34, height: 34, borderWidth: 2 },
-    pinIcon: { fontSize: 22 },
-    pinIconSmall: { fontSize: 16 },
-    helpPin: { borderColor: '#D500F9', width: 50, height: 50 },
+    helpPin: { borderColor: HELP_COLOR, width: 50, height: 50 },
     panicPin: { borderColor: c.danger },
     friend: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
       backgroundColor: c.surface,
       borderColor: c.success,
       borderWidth: 2,
@@ -604,7 +661,6 @@ const makeStyles = (c: Colors) =>
       justifyContent: 'center',
       ...elevation(c, 1),
     },
-    aimIcon: { fontSize: 22 },
     bottom: {
       position: 'absolute',
       left: 0,
@@ -628,13 +684,19 @@ const makeStyles = (c: Colors) =>
       marginBottom: spacing.xs,
     },
     notice: {
-      color: c.text,
-      fontSize: font.body,
-      fontWeight: '700',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
       padding: spacing.md,
       backgroundColor: c.surfaceHigh,
       borderRadius: radius.md,
-      overflow: 'hidden',
+    },
+    noticeText: { flex: 1, color: c.text, fontSize: font.body, fontWeight: '700' },
+    hintRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.xs,
     },
     myHelp: {
       alignItems: 'center',
@@ -643,16 +705,11 @@ const makeStyles = (c: Colors) =>
       paddingLeft: spacing.md,
       borderRadius: radius.md,
       borderWidth: 2,
-      borderColor: '#D500F9',
+      borderColor: HELP_COLOR,
     },
     myHelpText: { flex: 1, color: c.text, fontSize: font.small, fontWeight: '800' },
     myHelpBtn: { minWidth: 110 },
-    drawHint: {
-      color: c.text,
-      fontSize: font.body,
-      fontWeight: '800',
-      paddingHorizontal: spacing.xs,
-    },
+    drawHint: { flex: 1, color: c.text, fontSize: font.body, fontWeight: '800' },
     actions: { gap: spacing.sm },
     secondary: { flex: 1 },
     primary: { flex: 1.5 },

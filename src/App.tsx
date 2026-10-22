@@ -123,14 +123,14 @@ function Main() {
       show({
         id: `update-${update.version}`,
         tone: 'info',
-        icon: '⬆️',
+        icon: 'update',
         title: `BOM ${update.version} est disponible`,
         body: `Tu as la version ${CONFIG.appVersion}. Mettre à jour maintenant ?`,
         actions: [
           { label: 'Plus tard' },
           {
             label: 'Mettre à jour',
-            icon: '⬇️',
+            icon: 'download',
             primary: true,
             onPress: () => void Linking.openURL(update.url),
           },

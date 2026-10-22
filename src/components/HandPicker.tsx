@@ -10,14 +10,15 @@ export function HandPicker({ value, onChange }: { value: Hand; onChange: (h: Han
     <View style={styles.row} accessibilityRole="radiogroup">
       <BigButton
         label="Main gauche"
-        icon="🤚"
+        icon="hand"
+        iconMirrored
         variant={value === 'left' ? 'selected' : 'secondary'}
         onPress={() => onChange('left')}
         style={styles.item}
       />
       <BigButton
         label="Main droite"
-        icon="✋"
+        icon="hand"
         variant={value === 'right' ? 'selected' : 'secondary'}
         onPress={() => onChange('right')}
         style={styles.item}

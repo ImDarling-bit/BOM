@@ -1,14 +1,17 @@
-import { Pressable, type StyleProp, StyleSheet, Text, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
 import { type Colors, font, radius, spacing, touch } from '../theme';
 import { useStyles, useTheme } from '../theme/ThemeContext';
 import { tap } from '../utils/haptics';
+import { Icon, type IconName } from './Icon';
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'selected';
 
 interface Props {
   label: string;
-  icon?: string;
+  icon?: IconName;
+  /** Icône retournée horizontalement (ex. main gauche). */
+  iconMirrored?: boolean;
   onPress: () => void;
   variant?: Variant;
   disabled?: boolean;
@@ -21,6 +24,7 @@ interface Props {
 export function BigButton({
   label,
   icon,
+  iconMirrored,
   onPress,
   variant = 'secondary',
   disabled,
@@ -64,13 +68,23 @@ export function BigButton({
         style,
       ]}
     >
-      <Text
-        numberOfLines={2}
-        style={[styles.label, { color: fg[variant], fontSize: large ? font.large : font.body }]}
-      >
-        {icon ? `${icon}  ` : ''}
-        {label}
-      </Text>
+      <View style={styles.row}>
+        {icon ? (
+          <Icon
+            name={icon}
+            size={large ? 24 : 21}
+            color={fg[variant]}
+            strokeWidth={2.5}
+            mirrored={iconMirrored}
+          />
+        ) : null}
+        <Text
+          numberOfLines={2}
+          style={[styles.label, { color: fg[variant], fontSize: large ? font.large : font.body }]}
+        >
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -96,5 +110,6 @@ const makeStyles = (c: Colors) =>
     },
     pressed: { opacity: 0.75, transform: [{ scale: 0.97 }] },
     disabled: { opacity: 0.4 },
-    label: { fontWeight: '800', textAlign: 'center' },
+    row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+    label: { fontWeight: '800', textAlign: 'center', flexShrink: 1 },
   });

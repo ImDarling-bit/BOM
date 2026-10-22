@@ -12,6 +12,7 @@ import { success, warning } from '../utils/haptics';
 import { formatCode, newShareCode, parseCode } from '../utils/id';
 import { timeAgo } from '../utils/labels';
 import { BigButton } from './BigButton';
+import { Icon } from './Icon';
 import { Section } from './Section';
 
 /**
@@ -63,7 +64,7 @@ export function FriendsSection() {
             ? 'Partage avec mes proches : OUI'
             : 'Partage avec mes proches : NON'
         }
-        icon={settings.shareWithFriends ? '💚' : '🚫'}
+        icon={settings.shareWithFriends ? 'friend' : 'ban'}
         variant={settings.shareWithFriends ? 'selected' : 'secondary'}
         onPress={toggleShare}
       />
@@ -76,7 +77,7 @@ export function FriendsSection() {
           </Text>
           <BigButton
             label="Nouveau code"
-            icon="🔄"
+            icon="refresh"
             onPress={() => updateSettings({ shareCode: newShareCode() })}
             accessibilityHint="L’ancien code ne fonctionne plus : plus personne ne te suit"
           />
@@ -127,9 +128,15 @@ export function FriendsSection() {
         return (
           <View key={f.code} style={[styles.friend, { flexDirection: row }]}>
             <View style={styles.flex}>
-              <Text style={styles.friendName}>
-                {pos ? '💚' : '⚪'} {name}
-              </Text>
+              <View style={styles.friendRow}>
+                <Icon
+                  name={pos ? 'friend' : 'idle'}
+                  size={20}
+                  color={pos ? colors.success : colors.textMuted}
+                  strokeWidth={2.5}
+                />
+                <Text style={styles.friendName}>{name}</Text>
+              </View>
               <Text style={styles.friendMeta}>{status}</Text>
             </View>
             <BigButton
@@ -186,6 +193,7 @@ const makeStyles = (c: Colors) =>
       borderTopWidth: 1,
       borderTopColor: c.border,
     },
+    friendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     friendName: { color: c.text, fontSize: font.body, fontWeight: '800' },
     friendMeta: { color: c.textMuted, fontSize: font.small },
   });

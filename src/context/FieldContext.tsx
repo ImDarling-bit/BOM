@@ -13,7 +13,7 @@ import { chatSocket } from '../services/chatSocket';
 import type { Coords, FriendPanic, FriendPosition, HelpCall, HelpTarget } from '../types';
 import { distanceMeters, formatDistance } from '../utils/geo';
 import { success, warning } from '../utils/haptics';
-import { helpTargetLabel, roleIcon, roleLabel } from '../utils/labels';
+import { helpTargetLabel, roleLabel } from '../utils/labels';
 import { useAlerts } from './AlertsContext';
 import { useApp } from './AppContext';
 import { useLocation } from './LocationContext';
@@ -80,17 +80,17 @@ export function FieldProvider({
       show({
         id: `help-${h.id}`,
         tone: 'help',
-        icon: '🆘',
+        icon: 'help',
         urgent: true,
         title: `${h.author} appelle à l’aide`,
-        body: `${roleIcon(h.role)} ${roleLabel(h.role)} · cherche : ${h.roles.map(helpTargetLabel).join(', ')}${
+        body: `${roleLabel(h.role)} · cherche : ${h.roles.map(helpTargetLabel).join(', ')}${
           h.note ? `\n« ${h.note} »` : ''
         }\n${where(h)}`,
         actions: [
           { label: 'OK' },
           {
             label: 'Voir sur la carte',
-            icon: '🗺️',
+            icon: 'map',
             primary: true,
             onPress: () => focusRef.current(h),
           },
@@ -121,7 +121,7 @@ export function FieldProvider({
       show({
         id: `panic-${key}`,
         tone: 'danger',
-        icon: '⛔',
+        icon: 'purge',
         urgent: true,
         title: `${label} a purgé son téléphone`,
         body: `Ça peut vouloir dire une interpellation ou un danger. Dernière position : ${where(p)}.`,
@@ -131,7 +131,7 @@ export function FieldProvider({
                 { label: 'OK' },
                 {
                   label: 'Voir sur la carte',
-                  icon: '🗺️',
+                  icon: 'map',
                   primary: true,
                   onPress: () => focusRef.current(p as Coords),
                 },

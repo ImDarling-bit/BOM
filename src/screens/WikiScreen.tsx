@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BigButton } from '../components/BigButton';
+import { Icon } from '../components/Icon';
 import { ScreenHeader } from '../components/ScreenHeader';
 import wiki from '../data/wiki.json';
 import { useHand } from '../hooks/useHand';
@@ -62,7 +63,15 @@ export function WikiScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <ScreenHeader title="Tes droits" right={<Text style={styles.offline}>Hors ligne ✓</Text>} />
+      <ScreenHeader
+        title="Tes droits"
+        right={
+          <View style={styles.offlineRow}>
+            <Icon name="offline" size={18} color={colors.success} strokeWidth={2.5} />
+            <Text style={styles.offline}>Hors ligne</Text>
+          </View>
+        }
+      />
       <KeyboardAvoidingView style={styles.root} behavior="padding">
         <SectionList
           sections={sections}
@@ -135,7 +144,7 @@ function ArticleView({ article, onClose }: { article: WikiArticle; onClose: () =
         <View style={styles.spacer} />
         <BigButton
           label="Retour aux fiches"
-          icon="←"
+          icon="back"
           variant="primary"
           large
           onPress={onClose}
@@ -149,6 +158,7 @@ function ArticleView({ article, onClose }: { article: WikiArticle; onClose: () =
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: c.bg },
+    offlineRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     offline: { color: c.success, fontSize: font.small, fontWeight: '700' },
     list: { padding: spacing.lg, gap: spacing.sm },
     category: {

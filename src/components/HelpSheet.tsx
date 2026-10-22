@@ -33,7 +33,7 @@ export function HelpSheet({ onDone }: { onDone: (message: string | null) => void
 
   const send = () => {
     const r = callHelp(targets, note);
-    if (r === 'sent') onDone('🆘 Appel envoyé. Reste visible si tu peux.');
+    if (r === 'sent') onDone('Appel envoyé. Reste visible si tu peux.');
     else if (r === 'offline')
       onDone('Hors ligne : appel non envoyé. Utilise le chat ou appelle le 112.');
     else onDone('Position indisponible : active la localisation pour appeler à l’aide.');
@@ -73,7 +73,7 @@ export function HelpSheet({ onDone }: { onDone: (message: string | null) => void
         <BigButton label="Annuler" onPress={() => onDone(null)} style={styles.secondary} />
         <BigButton
           label="Envoyer l’appel"
-          icon="🆘"
+          icon="help"
           variant="danger"
           large
           disabled={!targets.length}

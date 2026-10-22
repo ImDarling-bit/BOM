@@ -1,20 +1,21 @@
+import type { IconName } from '../components/Icon';
 import type { AreaType, HelpTarget, PointType, ReportType, Role } from '../types';
 
-export const ROLES: { id: Role; label: string; icon: string }[] = [
-  { id: 'user', label: 'Manifestant·e', icon: '✊' },
-  { id: 'medic', label: 'Street medic', icon: '⛑️' },
-  { id: 'supply', label: 'Ravitaillement', icon: '💧' },
-  { id: 'protection', label: 'Protection', icon: '🛡️' },
+export const ROLES: { id: Role; label: string; icon: IconName }[] = [
+  { id: 'user', label: 'Manifestant·e', icon: 'fist' },
+  { id: 'medic', label: 'Street medic', icon: 'medic' },
+  { id: 'supply', label: 'Ravitaillement', icon: 'supply' },
+  { id: 'protection', label: 'Protection', icon: 'protection' },
 ];
 
 export const roleLabel = (r: Role) => ROLES.find((x) => x.id === r)?.label ?? r;
-export const roleIcon = (r: Role) => ROLES.find((x) => x.id === r)?.icon ?? '';
+export const roleIcon = (r: Role): IconName => ROLES.find((x) => x.id === r)?.icon ?? 'fist';
 
-export const HELP_TARGETS: { id: HelpTarget; label: string; icon: string }[] = [
-  { id: 'medic', label: 'Street medic', icon: '⛑️' },
-  { id: 'supply', label: 'Ravitaillement', icon: '💧' },
-  { id: 'protection', label: 'Protection', icon: '🛡️' },
-  { id: 'all', label: 'Tout le monde', icon: '📣' },
+export const HELP_TARGETS: { id: HelpTarget; label: string; icon: IconName }[] = [
+  { id: 'medic', label: 'Street medic', icon: 'medic' },
+  { id: 'supply', label: 'Ravitaillement', icon: 'supply' },
+  { id: 'protection', label: 'Protection', icon: 'protection' },
+  { id: 'all', label: 'Tout le monde', icon: 'all' },
 ];
 
 export const helpTargetLabel = (t: HelpTarget) => HELP_TARGETS.find((x) => x.id === t)?.label ?? t;
@@ -22,7 +23,7 @@ export const helpTargetLabel = (t: HelpTarget) => HELP_TARGETS.find((x) => x.id 
 export interface ReportMeta {
   id: ReportType;
   label: string;
-  icon: string;
+  icon: IconName;
   color: string;
   /** point = sous le viseur ; line = début + fin de rue ; area = zone libre. */
   draw: 'point' | 'line' | 'area';
@@ -34,7 +35,7 @@ export const POINT_TYPES: (ReportMeta & { id: PointType })[] = [
   {
     id: 'danger',
     label: 'Danger',
-    icon: '⚠️',
+    icon: 'danger',
     color: '#E53935',
     draw: 'point',
     hint: 'Charge, violence, risque immédiat',
@@ -42,7 +43,7 @@ export const POINT_TYPES: (ReportMeta & { id: PointType })[] = [
   {
     id: 'teargas',
     label: 'Lacrymo',
-    icon: '💨',
+    icon: 'teargas',
     color: '#9CCC00',
     draw: 'point',
     hint: 'Gaz lacrymogène tiré ici',
@@ -50,7 +51,7 @@ export const POINT_TYPES: (ReportMeta & { id: PointType })[] = [
   {
     id: 'medic',
     label: 'Soins',
-    icon: '⛑️',
+    icon: 'medic',
     color: '#00C853',
     draw: 'point',
     hint: 'Point de soins, street medics',
@@ -58,7 +59,7 @@ export const POINT_TYPES: (ReportMeta & { id: PointType })[] = [
   {
     id: 'supply',
     label: 'Ravitaillement',
-    icon: '💧',
+    icon: 'supply',
     color: '#0091EA',
     draw: 'point',
     hint: 'Eau, nourriture, sérum',
@@ -66,7 +67,7 @@ export const POINT_TYPES: (ReportMeta & { id: PointType })[] = [
   {
     id: 'test',
     label: 'Test',
-    icon: '🧪',
+    icon: 'test',
     color: '#8E24AA',
     draw: 'point',
     hint: 'Point d’essai (expire en 30 min)',
@@ -77,7 +78,7 @@ export const AREA_TYPES: (ReportMeta & { id: AreaType })[] = [
   {
     id: 'kettle',
     label: 'Nasse',
-    icon: '🚧',
+    icon: 'kettle',
     color: '#FF8F00',
     draw: 'line',
     hint: 'Touche le début puis la fin de la rue nassée',
@@ -85,7 +86,7 @@ export const AREA_TYPES: (ReportMeta & { id: AreaType })[] = [
   {
     id: 'safe_zone',
     label: 'Zone sûre',
-    icon: '🟢',
+    icon: 'safeZone',
     color: '#00C853',
     draw: 'area',
     hint: 'Touche la carte pour dessiner la zone',
@@ -93,7 +94,7 @@ export const AREA_TYPES: (ReportMeta & { id: AreaType })[] = [
   {
     id: 'danger_zone',
     label: 'Zone de danger',
-    icon: '🔴',
+    icon: 'dangerZone',
     color: '#E53935',
     draw: 'area',
     hint: 'Touche la carte pour dessiner la zone',

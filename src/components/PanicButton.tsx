@@ -5,8 +5,9 @@ import { CONFIG } from '../config';
 import { useApp } from '../context/AppContext';
 import { useLocation } from '../context/LocationContext';
 import { type Colors, radius, touch } from '../theme';
-import { useStyles } from '../theme/ThemeContext';
+import { useStyles, useTheme } from '../theme/ThemeContext';
 import { tap, warning } from '../utils/haptics';
+import { Icon } from './Icon';
 
 /**
  * Bouton d'urgence : maintenir ~0,8 s pour tout purger.
@@ -19,6 +20,7 @@ export function PanicButton() {
   const { panic } = useApp();
   const { coords } = useLocation();
   const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   const [progress] = useState(() => new Animated.Value(0));
   const anim = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -57,7 +59,7 @@ export function PanicButton() {
     >
       <Animated.View style={[styles.fill, { height }]} />
       <View style={styles.content} pointerEvents="none">
-        <Text style={styles.icon}>⛔</Text>
+        <Icon name="purge" size={22} color={colors.text} strokeWidth={2.5} />
         <Text style={styles.label}>PURGE</Text>
         <Text style={styles.hint}>maintenir</Text>
       </View>
@@ -85,7 +87,6 @@ const makeStyles = (c: Colors) =>
       backgroundColor: c.danger,
     },
     content: { alignItems: 'center' },
-    icon: { fontSize: 20 },
     label: { color: c.text, fontWeight: '900', fontSize: 15, letterSpacing: 1 },
     hint: { color: c.textMuted, fontSize: 11 },
   });

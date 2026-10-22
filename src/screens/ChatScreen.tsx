@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BigButton } from '../components/BigButton';
+import { Icon } from '../components/Icon';
 import { ScreenHeader, StatusDot } from '../components/ScreenHeader';
 import { CONFIG } from '../config';
 import { useApp } from '../context/AppContext';
@@ -89,7 +90,8 @@ export function ChatScreen() {
                 style={styles.nearby}
                 accessibilityLabel={`${nearby} manifestant·es autour de toi`}
               >
-                <Text style={styles.nearbyText}>👥 {nearby}</Text>
+                <Icon name="users" size={18} color={colors.onPrimary} strokeWidth={2.6} />
+                <Text style={styles.nearbyText}>{nearby}</Text>
               </View>
             ) : null}
             <StatusDot
@@ -181,6 +183,7 @@ function Bubble({
   here: Coords | null;
   isRight: boolean;
 }) {
+  const { colors } = useTheme();
   const styles = useStyles(makeStyles);
   const where =
     here && msg.latitude !== undefined && msg.longitude !== undefined
@@ -197,10 +200,13 @@ function Bubble({
       accessible
       accessibilityLabel={`${msg.author} : ${msg.text}`}
     >
-      <Text style={styles.meta}>
-        {roleIcon(msg.role)} {mine ? 'Moi' : msg.author} · {timeAgo(msg.ts)}
-        {where ? ` · ${where}` : ''}
-      </Text>
+      <View style={styles.metaRow}>
+        <Icon name={roleIcon(msg.role)} size={15} color={colors.textMuted} strokeWidth={2.5} />
+        <Text style={styles.meta}>
+          {mine ? 'Moi' : msg.author} · {timeAgo(msg.ts)}
+          {where ? ` · ${where}` : ''}
+        </Text>
+      </View>
       <Text style={styles.text}>{msg.text}</Text>
     </View>
   );
@@ -211,6 +217,9 @@ const makeStyles = (c: Colors) =>
     root: { flex: 1, backgroundColor: c.bg },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     nearby: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
       backgroundColor: c.primary,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs + 2,
@@ -223,6 +232,7 @@ const makeStyles = (c: Colors) =>
     bubble: { maxWidth: '85%', borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
     bubbleMine: { backgroundColor: c.surfaceHigh, borderWidth: 2, borderColor: c.accent },
     bubbleOther: { backgroundColor: c.surface },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     meta: { color: c.textMuted, fontSize: font.small, fontWeight: '700' },
     text: { color: c.text, fontSize: font.body, lineHeight: 25 },
     composer: {

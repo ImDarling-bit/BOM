@@ -3,19 +3,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useHand } from '../hooks/useHand';
 import { type Colors, radius, spacing, touch } from '../theme';
-import { useStyles } from '../theme/ThemeContext';
+import { useStyles, useTheme } from '../theme/ThemeContext';
 import { tap } from '../utils/haptics';
 import { FlagStripe } from './FlagStripe';
+import { Icon, type IconName } from './Icon';
 import { PanicButton } from './PanicButton';
 
 export type TabId = 'map' | 'chat' | 'wiki' | 'settings';
 
 // Par ordre de priorité : le premier est placé le plus près du pouce.
-const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'map', label: 'Carte', icon: '🗺️' },
-  { id: 'chat', label: 'Chat', icon: '💬' },
-  { id: 'wiki', label: 'Droits', icon: '⚖️' },
-  { id: 'settings', label: 'Réglages', icon: '⚙️' },
+const TABS: { id: TabId; label: string; icon: IconName }[] = [
+  { id: 'map', label: 'Carte', icon: 'map' },
+  { id: 'chat', label: 'Chat', icon: 'chat' },
+  { id: 'wiki', label: 'Droits', icon: 'rights' },
+  { id: 'settings', label: 'Réglages', icon: 'settings' },
 ];
 
 /**
@@ -35,6 +36,7 @@ export function ThumbTabBar({
   const { row } = useHand();
   const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   // Ordre [moins prioritaire … plus prioritaire, PURGE] + `row` = PURGE sous le pouce.
   const ordered = [...TABS].reverse();
 
@@ -68,7 +70,12 @@ export function ThumbTabBar({
               ]}
             >
               {selected ? <View style={styles.indicator} /> : null}
-              <Text style={styles.icon}>{t.icon}</Text>
+              <Icon
+                name={t.icon}
+                size={26}
+                color={selected ? colors.accent : colors.textMuted}
+                strokeWidth={selected ? 2.6 : 2.1}
+              />
               {badge > 0 ? (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
@@ -105,7 +112,6 @@ const makeStyles = (c: Colors) =>
     },
     tabActive: { backgroundColor: c.surfaceHigh },
     pressed: { opacity: 0.6 },
-    icon: { fontSize: 24 },
     label: { color: c.textMuted, fontSize: 13, fontWeight: '700', marginTop: 2 },
     labelActive: { color: c.accent },
     indicator: {
