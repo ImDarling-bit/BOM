@@ -45,6 +45,7 @@ Ce que l'app BOM attend du serveur. Tout est en JSON. L'implémentation de réf�
 | `help_removed`   | `id`                                                              |
 | `friend`         | `code`, `name`, `latitude`, `longitude`, `ts`                     |
 | `friend_panic`   | `code`, `name`, `latitude`, `longitude` (ou `null`), `ts`         |
+| `nearby`         | `count` (autres manifestant·es connecté·es dans le rayon, `null` sans position), `radius` — envoyé quand il change, contrôle toutes les 5 s |
 | `pong`           | — (ignoré par l'app)                                              |
 
 Le serveur diffuse un `chat` à tous les clients dont la dernière position connue est dans le

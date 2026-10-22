@@ -39,6 +39,14 @@ export function useSocketStatus(): SocketStatus {
   );
 }
 
+/** Manifestant·es connecté·es autour de moi (compté par le serveur). */
+export function useNearby(): number | null {
+  return useSyncExternalStore(
+    (cb) => chatSocket.on('nearby', cb),
+    () => chatSocket.nearby
+  );
+}
+
 export function ChatScreen() {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
@@ -46,6 +54,7 @@ export function ChatScreen() {
   const { coords } = useLocation();
   const { row, isRight } = useHand();
   const status = useSocketStatus();
+  const nearby = useNearby();
   const { messages, add, markRead } = useChat();
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -74,14 +83,28 @@ export function ChatScreen() {
       <ScreenHeader
         title="Chat local"
         right={
-          <StatusDot
-            label={statusInfo(colors)[status].label}
-            color={statusInfo(colors)[status].color}
-          />
+          <View style={styles.headerRight}>
+            {nearby !== null ? (
+              <View
+                style={styles.nearby}
+                accessibilityLabel={`${nearby} manifestant·es autour de toi`}
+              >
+                <Text style={styles.nearbyText}>👥 {nearby}</Text>
+              </View>
+            ) : null}
+            <StatusDot
+              label={statusInfo(colors)[status].label}
+              color={statusInfo(colors)[status].color}
+            />
+          </View>
         }
       />
       <Text style={styles.subtitle}>
-        Messages dans un rayon de {CONFIG.radiusMeters / 1000} km · position arrondie à ~100 m
+        {nearby === null
+          ? status === 'online'
+            ? 'Active ta position pour voir combien vous êtes autour.'
+            : `Messages dans un rayon de ${CONFIG.radiusMeters / 1000} km`
+          : `${nearby} autre${nearby > 1 ? 's' : ''} manifestant·e${nearby > 1 ? 's' : ''} connecté·e${nearby > 1 ? 's' : ''} à moins de ${CONFIG.radiusMeters / 1000} km`}
       </Text>
 
       <KeyboardAvoidingView style={styles.root} behavior="padding">
@@ -186,6 +209,14 @@ function Bubble({
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: c.bg },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    nearby: {
+      backgroundColor: c.primary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs + 2,
+      borderRadius: 999,
+    },
+    nearbyText: { color: c.onPrimary, fontSize: font.body, fontWeight: '900' },
     subtitle: { color: c.textMuted, fontSize: font.small, paddingHorizontal: spacing.lg },
     list: { padding: spacing.lg, gap: spacing.sm },
     empty: { color: c.textMuted, fontSize: font.body, textAlign: 'center', padding: spacing.xl },

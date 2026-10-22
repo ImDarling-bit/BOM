@@ -384,6 +384,29 @@ export function createHub(server) {
     for (const [ws, c] of clients) if (c.lastSeen < limit) ws.terminate();
   }, 30_000).unref();
 
+  // Nombre de manifestant·es autour de chacun·e (chat local), envoyé s'il change.
+  function sendNearbyCounts() {
+    const located = [...clients].filter(([, c]) => c.name && c.lat !== null);
+    for (const [ws, c] of clients) {
+      if (!c.name) continue;
+      let count = null;
+      if (c.lat !== null) {
+        // Pré-filtre grossier (degrés) avant le calcul exact de distance.
+        const dLat = c.radius / 111_000;
+        count = 0;
+        for (const [ows, o] of located) {
+          if (ows === ws || Math.abs(o.lat - c.lat) > dLat) continue;
+          if (distanceM(c.lat, c.lng, o.lat, o.lng) <= c.radius) count++;
+        }
+      }
+      if (count !== c.nearby) {
+        c.nearby = count;
+        send(ws, { type: 'nearby', count, radius: c.radius });
+      }
+    }
+  }
+  setInterval(sendNearbyCounts, 5000).unref();
+
   // --- REST : /reports ----------------------------------------------------------------
 
   const postLimit = limiter(10, 60_000);

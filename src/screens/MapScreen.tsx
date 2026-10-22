@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BigButton } from '../components/BigButton';
 import { HelpSheet } from '../components/HelpSheet';
+import { ReportMenu } from '../components/ReportMenu';
 import { CONFIG, FALLBACK_COORDS } from '../config';
 import { useApp } from '../context/AppContext';
 import { useField } from '../context/FieldContext';
@@ -21,20 +22,13 @@ import { useHand } from '../hooks/useHand';
 import { createReport, fetchReports } from '../services/api';
 import { chatSocket } from '../services/chatSocket';
 import { loadReports, saveReports } from '../storage/storage';
-import { type Colors, elevation, font, radius, spacing, touch } from '../theme';
+import { type Colors, elevation, font, radius, spacing } from '../theme';
 import { useStyles, useTheme } from '../theme/ThemeContext';
 import type { Coords, Report, ReportType } from '../types';
 import { centroid, distanceMeters, formatDistance, streetBand } from '../utils/geo';
 import { success, tap, warning } from '../utils/haptics';
 import { newId } from '../utils/id';
-import {
-  AREA_TYPES,
-  helpTargetLabel,
-  POINT_TYPES,
-  type ReportMeta,
-  reportMeta,
-  timeAgo,
-} from '../utils/labels';
+import { helpTargetLabel, type ReportMeta, reportMeta, timeAgo } from '../utils/labels';
 
 const REFRESH_MS = 60_000;
 const ZOOM = 15;
@@ -45,6 +39,7 @@ const lngLat = (c: Coords): LngLat => [c.longitude, c.latitude];
 type Mode =
   | { kind: 'idle' }
   | { kind: 'pick' }
+  | { kind: 'aim'; meta: ReportMeta }
   | { kind: 'draw'; meta: ReportMeta; points: LngLat[] }
   | { kind: 'help' };
 
@@ -307,11 +302,17 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
         ))}
       </Map>
 
-      {/* Viseur : un point est posé au centre de la carte. */}
-      {mode.kind === 'pick' ? (
+      {/* Viseur en croix : le point est posé exactement au centre de la carte. */}
+      {mode.kind === 'aim' ? (
         <View pointerEvents="none" style={styles.crosshairWrap}>
-          <View style={[styles.crosshairRing, { borderColor: colors.accent }]} />
-          <View style={[styles.crosshairDot, { backgroundColor: colors.accent }]} />
+          <View style={styles.cross}>
+            <View style={[styles.aimBadge, { borderColor: mode.meta.color }]}>
+              <Text style={styles.aimIcon}>{mode.meta.icon}</Text>
+            </View>
+            <View style={[styles.crossBar, styles.crossH, { backgroundColor: colors.accent }]} />
+            <View style={[styles.crossBar, styles.crossV, { backgroundColor: colors.accent }]} />
+            <View style={[styles.crossCenter, { borderColor: colors.accent }]} />
+          </View>
         </View>
       ) : null}
 
@@ -325,8 +326,8 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
         </View>
       </SafeAreaView>
 
-      {/* Zone du pouce */}
-      <View style={styles.bottom}>
+      {/* Zone du pouce (masquée pendant que le menu latéral est ouvert) */}
+      <View style={[styles.bottom, mode.kind === 'pick' && styles.hidden]}>
         <View style={styles.handle} />
         {notice ? (
           <Pressable
@@ -378,25 +379,32 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
           </>
         ) : null}
 
-        {mode.kind === 'pick' ? (
+        {mode.kind === 'aim' ? (
           <>
-            <Text style={styles.groupTitle}>Point sous le viseur</Text>
-            <View style={styles.grid}>
-              {POINT_TYPES.map((t) => (
-                <TypeTile key={t.id} meta={t} onPress={() => void submit(t.id)} />
-              ))}
+            <Text style={styles.drawHint}>
+              {mode.meta.icon} Déplace la carte : la croix marque l’endroit exact.
+            </Text>
+            <View style={[styles.actions, { flexDirection: row }]}>
+              <BigButton
+                label="Annuler"
+                onPress={() => setMode({ kind: 'idle' })}
+                style={styles.secondary}
+              />
+              <BigButton
+                label="Changer"
+                icon="☰"
+                onPress={() => setMode({ kind: 'pick' })}
+                style={styles.secondary}
+              />
+              <BigButton
+                label="Poser ici"
+                icon="✓"
+                variant="primary"
+                large
+                onPress={() => void submit(mode.meta.id)}
+                style={styles.primary}
+              />
             </View>
-            <Text style={styles.groupTitle}>Zone à dessiner</Text>
-            <View style={styles.grid}>
-              {AREA_TYPES.map((t) => (
-                <TypeTile
-                  key={t.id}
-                  meta={t}
-                  onPress={() => setMode({ kind: 'draw', meta: t, points: [] })}
-                />
-              ))}
-            </View>
-            <BigButton label="Annuler" onPress={() => setMode({ kind: 'idle' })} />
           </>
         ) : null}
 
@@ -443,35 +451,25 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
           />
         ) : null}
       </View>
+
+      {mode.kind === 'pick' ? (
+        <ReportMenu
+          onClose={() => setMode({ kind: 'idle' })}
+          onPick={(meta) =>
+            setMode(
+              meta.draw === 'point' ? { kind: 'aim', meta } : { kind: 'draw', meta, points: [] }
+            )
+          }
+        />
+      ) : null}
     </View>
   );
 }
 
-/** Tuile de choix d'un type de signalement. */
-function TypeTile({ meta, onPress }: { meta: ReportMeta; onPress: () => void }) {
-  const styles = useStyles(makeStyles);
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={meta.label}
-      accessibilityHint={meta.hint}
-      onPress={() => {
-        tap();
-        onPress();
-      }}
-      style={({ pressed }) => [styles.tile, { borderColor: meta.color }, pressed && styles.pressed]}
-    >
-      <Text style={styles.tileIcon}>{meta.icon}</Text>
-      <Text style={styles.tileLabel} numberOfLines={1}>
-        {meta.label}
-      </Text>
-    </Pressable>
-  );
-}
-
 function bannerText(mode: Mode, count: number): string {
-  if (mode.kind === 'pick')
-    return 'Place le viseur, puis choisis un point — ou une zone à dessiner';
+  if (mode.kind === 'pick') return 'Que veux-tu signaler ?';
+  if (mode.kind === 'aim')
+    return `${mode.meta.icon} ${mode.meta.label} : vise l’endroit exact avec la croix`;
   if (mode.kind === 'draw') return `${mode.meta.label} : ${mode.meta.hint.toLowerCase()}`;
   if (mode.kind === 'help') return 'Qui appeler à l’aide ? Ta position sera partagée.';
   return `${count} signalement${count > 1 ? 's' : ''} · 1 h max`;
@@ -578,14 +576,35 @@ const makeStyles = (c: Colors) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    crosshairRing: {
+    cross: { width: 72, height: 72, alignItems: 'center', justifyContent: 'center' },
+    crossBar: {
       position: 'absolute',
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      borderWidth: 3,
+      borderRadius: 2,
+      borderWidth: 1,
+      borderColor: c.shadow,
     },
-    crosshairDot: { width: 10, height: 10, borderRadius: 5 },
+    crossH: { width: 72, height: 6, top: 33, left: 0 },
+    crossV: { width: 6, height: 72, left: 33, top: 0 },
+    crossCenter: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      borderWidth: 3,
+      backgroundColor: c.surface,
+    },
+    aimBadge: {
+      position: 'absolute',
+      top: -58,
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      borderWidth: 3,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...elevation(c, 1),
+    },
+    aimIcon: { fontSize: 22 },
     bottom: {
       position: 'absolute',
       left: 0,
@@ -599,6 +618,7 @@ const makeStyles = (c: Colors) =>
       borderTopRightRadius: radius.lg + 6,
       ...elevation(c, 2),
     },
+    hidden: { display: 'none' },
     handle: {
       alignSelf: 'center',
       width: 40,
@@ -627,29 +647,6 @@ const makeStyles = (c: Colors) =>
     },
     myHelpText: { flex: 1, color: c.text, fontSize: font.small, fontWeight: '800' },
     myHelpBtn: { minWidth: 110 },
-    groupTitle: {
-      color: c.textMuted,
-      fontSize: font.small,
-      fontWeight: '800',
-      textTransform: 'uppercase',
-      letterSpacing: 0.8,
-    },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-    tile: {
-      flexBasis: '30%',
-      flexGrow: 1,
-      minHeight: touch.primary,
-      borderRadius: radius.md,
-      borderWidth: 2,
-      backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: spacing.sm,
-      gap: 2,
-    },
-    tileIcon: { fontSize: 22 },
-    tileLabel: { color: c.text, fontSize: font.small, fontWeight: '800' },
-    pressed: { opacity: 0.7, transform: [{ scale: 0.97 }] },
     drawHint: {
       color: c.text,
       fontSize: font.body,

@@ -41,6 +41,7 @@ type Events = {
   helpRemoved: string;
   friend: FriendPosition;
   friendPanic: FriendPanic;
+  nearby: number | null;
 };
 
 type Listener<K extends keyof Events> = (payload: Events[K]) => void;
@@ -87,9 +88,12 @@ class ChatSocket {
     helpRemoved: new Set(),
     friend: new Set(),
     friendPanic: new Set(),
+    nearby: new Set(),
   };
 
   status: SocketStatus = 'offline';
+  /** Manifestant·es connecté·es dans le rayon du chat local (null = sans position). */
+  nearby: number | null = null;
 
   on<K extends keyof Events>(event: K, cb: Listener<K>): () => void {
     this.listeners[event].add(cb);
@@ -124,6 +128,7 @@ class ChatSocket {
       }
       this.ws = null;
     }
+    this.setNearby(null);
     this.setStatus('offline');
   }
 
@@ -256,6 +261,12 @@ class ChatSocket {
     this.pingTimer = null;
   }
 
+  private setNearby(n: number | null) {
+    if (this.nearby === n) return;
+    this.nearby = n;
+    this.emit('nearby', n);
+  }
+
   private setStatus(s: SocketStatus) {
     if (this.status === s) return;
     this.status = s;
@@ -299,6 +310,11 @@ class ChatSocket {
       case 'help_ack':
         if (typeof data.id === 'string' && typeof data.notified === 'number') {
           this.emit('helpAck', { id: data.id, notified: data.notified });
+        }
+        break;
+      case 'nearby':
+        if (data.count === null || typeof data.count === 'number') {
+          this.setNearby(data.count as number | null);
         }
         break;
       case 'help_removed':
