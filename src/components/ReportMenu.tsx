@@ -55,7 +55,6 @@ export function ReportMenu({
         pressed && styles.pressed,
       ]}
     >
-      <View style={[styles.swatch, { backgroundColor: meta.color }]} />
       <Icon name={meta.icon} size={22} color={meta.color} strokeWidth={2.5} />
       <Text style={[styles.itemLabel, { textAlign: isRight ? 'left' : 'right' }]} numberOfLines={1}>
         {meta.label}
@@ -84,9 +83,9 @@ export function ReportMenu({
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <Text style={styles.title}>Point · avec la croix</Text>
+          <Text style={styles.title}>Point</Text>
           {POINT_TYPES.map(item)}
-          <Text style={styles.title}>Zone · à dessiner</Text>
+          <Text style={styles.title}>Zone</Text>
           {AREA_TYPES.map(item)}
           <BigButton label="Fermer" icon="close" onPress={onClose} style={styles.close} />
         </ScrollView>
@@ -114,9 +113,7 @@ const makeStyles = (c: Colors) =>
     title: {
       color: c.textMuted,
       fontSize: 13,
-      fontWeight: '800',
-      textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      fontWeight: '700',
       marginTop: spacing.sm,
       paddingHorizontal: spacing.xs,
     },
@@ -129,8 +126,7 @@ const makeStyles = (c: Colors) =>
       backgroundColor: c.surface,
       overflow: 'hidden',
     },
-    swatch: { width: 6, alignSelf: 'stretch', borderRadius: 3, marginVertical: spacing.sm },
-    itemLabel: { flex: 1, color: c.text, fontSize: font.body, fontWeight: '800' },
+    itemLabel: { flex: 1, color: c.text, fontSize: font.body, fontWeight: '700' },
     pressed: { opacity: 0.7, transform: [{ scale: 0.98 }] },
     close: { marginTop: spacing.sm },
   });

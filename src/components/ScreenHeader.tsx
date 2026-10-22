@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { type Colors, font, spacing } from '../theme';
 import { useStyles } from '../theme/ThemeContext';
-import { FlagStripe } from './FlagStripe';
 
 /**
  * En-tête purement informatif : le haut de l'écran est hors de portée du
@@ -12,14 +11,11 @@ import { FlagStripe } from './FlagStripe';
 export function ScreenHeader({ title, right }: { title: string; right?: ReactNode }) {
   const styles = useStyles(makeStyles);
   return (
-    <View>
-      <View style={styles.header}>
-        <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
-          {title}
-        </Text>
-        {right}
-      </View>
-      <FlagStripe height={3} />
+    <View style={styles.header}>
+      <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
+        {title}
+      </Text>
+      {right}
     </View>
   );
 }
@@ -46,7 +42,7 @@ const makeStyles = (c: Colors) =>
     },
     title: {
       color: c.text,
-      fontSize: font.title,
+      fontSize: font.title - 2,
       fontWeight: '900',
       flexShrink: 1,
       letterSpacing: -0.5,
@@ -54,11 +50,7 @@ const makeStyles = (c: Colors) =>
     status: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.sm,
-      backgroundColor: c.surface,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs + 2,
-      borderRadius: 999,
+      gap: 6,
     },
     dot: { width: 10, height: 10, borderRadius: 5 },
     statusText: { color: c.textMuted, fontSize: font.small, fontWeight: '700' },

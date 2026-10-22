@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CONFIG } from '../config';
@@ -23,9 +23,18 @@ export function PanicButton() {
   const { colors } = useTheme();
   const [progress] = useState(() => new Animated.Value(0));
   const anim = useRef<Animated.CompositeAnimation | null>(null);
+  const pressedAt = useRef(0);
+  // Appui trop court : on rappelle qu'il faut maintenir, au lieu d'un texte permanent.
+  const [hint, setHint] = useState(false);
+  useEffect(() => {
+    if (!hint) return;
+    const t = setTimeout(() => setHint(false), 2000);
+    return () => clearTimeout(t);
+  }, [hint]);
 
   const start = () => {
     tap();
+    pressedAt.current = Date.now();
     anim.current?.stop();
     anim.current = Animated.timing(progress, {
       toValue: 1,
@@ -42,6 +51,7 @@ export function PanicButton() {
 
   const cancel = () => {
     anim.current?.stop();
+    if (Date.now() - pressedAt.current < CONFIG.panicHoldMs) setHint(true);
     Animated.timing(progress, { toValue: 0, duration: 150, useNativeDriver: false }).start();
   };
 
@@ -60,8 +70,7 @@ export function PanicButton() {
       <Animated.View style={[styles.fill, { height }]} />
       <View style={styles.content} pointerEvents="none">
         <Icon name="purge" size={22} color={colors.text} strokeWidth={2.5} />
-        <Text style={styles.label}>PURGE</Text>
-        <Text style={styles.hint}>maintenir</Text>
+        <Text style={[styles.label, hint && styles.labelHint]}>{hint ? 'Maintiens' : 'PURGE'}</Text>
       </View>
     </Pressable>
   );
@@ -73,7 +82,7 @@ const makeStyles = (c: Colors) =>
       width: 84,
       minHeight: touch.primary + 8,
       borderRadius: radius.md,
-      borderWidth: 2.5,
+      borderWidth: 2,
       borderColor: c.danger,
       backgroundColor: c.surface,
       overflow: 'hidden',
@@ -86,7 +95,7 @@ const makeStyles = (c: Colors) =>
       bottom: 0,
       backgroundColor: c.danger,
     },
-    content: { alignItems: 'center' },
+    content: { alignItems: 'center', gap: 2 },
     label: { color: c.text, fontWeight: '900', fontSize: 15, letterSpacing: 1 },
-    hint: { color: c.textMuted, fontSize: 11 },
+    labelHint: { fontSize: 13, letterSpacing: 0, color: c.warning },
   });

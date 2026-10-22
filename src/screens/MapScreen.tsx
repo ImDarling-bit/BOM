@@ -23,7 +23,7 @@ import { useHand } from '../hooks/useHand';
 import { createReport, fetchReports } from '../services/api';
 import { chatSocket } from '../services/chatSocket';
 import { loadReports, saveReports } from '../storage/storage';
-import { type Colors, elevation, font, radius, spacing } from '../theme';
+import { type Colors, elevation, font, radius, spacing, touch } from '../theme';
 import { useStyles, useTheme } from '../theme/ThemeContext';
 import type { Coords, Report, ReportType } from '../types';
 import { centroid, distanceMeters, formatDistance, streetBand } from '../utils/geo';
@@ -56,7 +56,8 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
   const { profile } = useApp();
   const { coords, permission } = useLocation();
   const { helps, myHelp, friends, panics, cancelHelp } = useField();
-  const { row } = useHand();
+  const { row, edge } = useHand();
+  const [sheetHeight, setSheetHeight] = useState(0);
   const { scheme, colors } = useTheme();
   const styles = useStyles(makeStyles);
   const cameraRef = useRef<CameraRef>(null);
@@ -354,18 +355,45 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
       ) : null}
 
       <SafeAreaView edges={['top']} pointerEvents="none" style={styles.top}>
-        <View style={styles.banner}>
-          <Text style={styles.bannerText}>{bannerText(mode, visible.length)}</Text>
-          {permission === 'denied' ? (
-            <Text style={styles.bannerWarn}>Localisation refusée : carte centrée par défaut.</Text>
-          ) : null}
-          <Text style={styles.attribution}>© OpenStreetMap · OpenMapTiles · OpenFreeMap</Text>
-        </View>
+        <Text style={styles.attribution}>© OpenStreetMap · OpenMapTiles · OpenFreeMap</Text>
+        {bannerText(mode) || permission === 'denied' ? (
+          <View style={styles.banner}>
+            {bannerText(mode) ? <Text style={styles.bannerText}>{bannerText(mode)}</Text> : null}
+            {permission === 'denied' ? (
+              <Text style={styles.bannerWarn}>
+                Localisation refusée : carte centrée par défaut.
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
       </SafeAreaView>
 
+      {/* Recentrer : bouton rond flottant côté pouce, juste au-dessus du panneau. */}
+      {mode.kind === 'idle' || mode.kind === 'aim' ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Centrer sur ma position"
+          onPress={() => {
+            tap();
+            recenter();
+          }}
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.fab,
+            edge(spacing.md),
+            { bottom: sheetHeight + spacing.md },
+            pressed && styles.fabPressed,
+          ]}
+        >
+          <Icon name="crosshair" size={26} color={colors.text} strokeWidth={2.4} />
+        </Pressable>
+      ) : null}
+
       {/* Zone du pouce (masquée pendant que le menu latéral est ouvert) */}
-      <View style={[styles.bottom, mode.kind === 'pick' && styles.hidden]}>
-        <View style={styles.handle} />
+      <View
+        style={[styles.bottom, mode.kind === 'pick' && styles.hidden]}
+        onLayout={(e) => setSheetHeight(e.nativeEvent.layout.height)}
+      >
         {notice ? (
           <Pressable
             onPress={() => setNotice(null)}
@@ -396,12 +424,6 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
               </View>
             ) : null}
             <View style={[styles.actions, { flexDirection: row }]}>
-              <BigButton
-                label="Centrer"
-                icon="crosshair"
-                onPress={recenter}
-                style={styles.secondary}
-              />
               <BigButton
                 label="Aide"
                 icon="help"
@@ -523,12 +545,12 @@ export function MapScreen({ focus }: { focus: (Coords & { at: number }) | null }
   );
 }
 
-function bannerText(mode: Mode, count: number): string {
+function bannerText(mode: Mode): string | null {
   if (mode.kind === 'pick') return 'Que veux-tu signaler ?';
-  if (mode.kind === 'aim') return `${mode.meta.label} : vise l’endroit exact avec la croix`;
-  if (mode.kind === 'draw') return `${mode.meta.label} : ${mode.meta.hint.toLowerCase()}`;
-  if (mode.kind === 'help') return 'Qui appeler à l’aide ? Ta position sera partagée.';
-  return `${count} signalement${count > 1 ? 's' : ''} · 1 h max`;
+  if (mode.kind === 'aim') return `${mode.meta.label} : vise avec la croix`;
+  if (mode.kind === 'draw') return mode.meta.label;
+  if (mode.kind === 'help') return 'Ta position sera partagée.';
+  return null;
 }
 
 function drawHint(d: { meta: ReportMeta; points: LngLat[] }): string {
@@ -586,21 +608,28 @@ const makeStyles = (c: Colors) =>
     root: { flex: 1, backgroundColor: c.bg },
     top: { position: 'absolute', top: 0, left: 0, right: 0 },
     banner: {
-      margin: spacing.md,
-      paddingVertical: spacing.sm + 2,
+      alignSelf: 'center',
+      marginTop: spacing.xs,
+      paddingVertical: spacing.sm,
       paddingHorizontal: spacing.lg,
-      borderRadius: radius.lg,
+      borderRadius: radius.pill,
       backgroundColor: c.overlay,
       ...elevation(c, 1),
     },
     bannerText: { color: c.text, fontSize: font.body, fontWeight: '700' },
     bannerWarn: { color: c.warning, fontSize: font.small, marginTop: spacing.xs },
-    attribution: { color: c.textMuted, fontSize: 11, marginTop: spacing.xs },
+    attribution: {
+      alignSelf: 'flex-start',
+      marginLeft: spacing.sm,
+      color: c.textMuted,
+      fontSize: 10,
+      opacity: 0.8,
+    },
     pin: {
       width: 44,
       height: 44,
       borderRadius: radius.pill,
-      borderWidth: 3,
+      borderWidth: 2,
       backgroundColor: c.surface,
       alignItems: 'center',
       justifyContent: 'center',
@@ -667,7 +696,6 @@ const makeStyles = (c: Colors) =>
       right: 0,
       bottom: 0,
       padding: spacing.md,
-      paddingTop: spacing.sm,
       gap: spacing.sm,
       backgroundColor: c.overlay,
       borderTopLeftRadius: radius.lg + 6,
@@ -675,14 +703,17 @@ const makeStyles = (c: Colors) =>
       ...elevation(c, 2),
     },
     hidden: { display: 'none' },
-    handle: {
-      alignSelf: 'center',
-      width: 40,
-      height: 5,
-      borderRadius: 3,
-      backgroundColor: c.border,
-      marginBottom: spacing.xs,
+    fab: {
+      position: 'absolute',
+      width: touch.min,
+      height: touch.min,
+      borderRadius: touch.min / 2,
+      backgroundColor: c.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...elevation(c, 1),
     },
+    fabPressed: { opacity: 0.7, transform: [{ scale: 0.95 }] },
     notice: {
       flexDirection: 'row',
       alignItems: 'center',

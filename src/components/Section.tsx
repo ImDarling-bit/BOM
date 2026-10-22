@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { type Colors, font, radius, spacing } from '../theme';
+import { type Colors, font, spacing } from '../theme';
 import { useStyles } from '../theme/ThemeContext';
 
-/** Bloc de réglages : titre, aide facultative, contenu sur une carte arrondie. */
+/** Bloc de réglages : titre discret, aide facultative courte, contenu sans cadre. */
 export function Section({
   title,
   hint,
@@ -20,8 +20,8 @@ export function Section({
       <Text style={styles.title} accessibilityRole="header">
         {title}
       </Text>
-      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       <View style={styles.body}>{children}</View>
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   );
 }
@@ -29,12 +29,7 @@ export function Section({
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
     section: { gap: spacing.sm },
-    title: { color: c.text, fontSize: font.large, fontWeight: '800' },
-    hint: { color: c.textMuted, fontSize: font.small, lineHeight: 21 },
-    body: {
-      gap: spacing.sm,
-      backgroundColor: c.surface,
-      borderRadius: radius.lg,
-      padding: spacing.md,
-    },
+    title: { color: c.textMuted, fontSize: font.small, fontWeight: '700', letterSpacing: 0.3 },
+    hint: { color: c.textMuted, fontSize: font.small, lineHeight: 20 },
+    body: { gap: spacing.sm },
   });

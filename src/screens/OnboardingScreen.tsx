@@ -104,7 +104,7 @@ const makeStyles = (c: Colors) =>
       minHeight: touch.primary,
       backgroundColor: c.surface,
       borderColor: c.border,
-      borderWidth: 2,
+      borderWidth: 1,
       borderRadius: radius.md,
       color: c.text,
       fontSize: font.large,

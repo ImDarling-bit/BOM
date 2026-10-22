@@ -15,7 +15,7 @@ import { CONFIG } from '../config';
 import { useApp } from '../context/AppContext';
 import { useLocation } from '../context/LocationContext';
 import { checkForUpdate } from '../services/update';
-import { type Colors, font, radius, spacing } from '../theme';
+import { type Colors, font, spacing } from '../theme';
 import { useStyles, useTheme } from '../theme/ThemeContext';
 import { roleIcon, roleLabel } from '../utils/labels';
 
@@ -42,7 +42,7 @@ export function SettingsScreen() {
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScreenHeader title="Réglages" />
       <ThumbScroll>
-        <View style={styles.card}>
+        <View style={styles.profile}>
           <Text style={styles.name}>
             {profile.pseudo}
             <Text style={styles.tag}>#{profile.tag}</Text>
@@ -50,15 +50,12 @@ export function SettingsScreen() {
           <View style={styles.metaRow}>
             <Icon name={roleIcon(profile.role)} size={18} color={colors.accent} strokeWidth={2.5} />
             <Text style={[styles.meta, styles.flex]}>
-              {roleLabel(profile.role)} · identifiant stocké uniquement sur ce téléphone
+              {roleLabel(profile.role)} · identifiant gardé sur ce téléphone
             </Text>
           </View>
         </View>
 
-        <Section
-          title="Apparence"
-          hint="Clair ou sombre selon ton téléphone. Choisis ta couleur ou un drapeau."
-        >
+        <Section title="Apparence">
           <ThemePicker />
         </Section>
 
@@ -69,7 +66,7 @@ export function SettingsScreen() {
           hint={
             permission === 'denied'
               ? 'Localisation refusée dans les réglages du téléphone.'
-              : 'Arrondie à ~100 m avant envoi au serveur. Jamais en arrière-plan.'
+              : 'Arrondie à ~100 m. Jamais en arrière-plan.'
           }
         >
           <BigButton
@@ -86,31 +83,22 @@ export function SettingsScreen() {
           <RolePicker value={profile.role} onChange={(role) => updateProfile({ role })} />
         </Section>
 
-        <Section
-          title="Main maîtresse"
-          hint="Les boutons principaux et PURGE passent du côté de ton pouce."
-        >
+        <Section title="Main maîtresse">
           <HandPicker value={settings.hand} onChange={(hand) => updateSettings({ hand })} />
         </Section>
 
         <Section
-          title="Ce que voient les organisateurs"
-          hint="Les admins du serveur voient en direct : ton pseudo, ton rôle, ta position arrondie (~100 m), tes messages du chat local, tes signalements, tes appels à l’aide et l’endroit d’une purge. Jamais ton identifiant complet ni ta position précise."
-        >
-          <Text style={styles.mono}>{CONFIG.wsUrl}</Text>
-          <Text style={styles.mono}>{CONFIG.apiUrl}</Text>
-        </Section>
-
-        <Section
-          title="Version"
-          hint={`BOM ${CONFIG.appVersion} · Boîte à Outils de Manifestation`}
+          title="À propos"
+          hint="Les organisateurs voient ton pseudo, ton rôle, ta position arrondie, le chat local, tes signalements, tes appels à l’aide et l’endroit d’une purge."
         >
           <BigButton
             label="Chercher une mise à jour"
             icon="update"
             onPress={() => void checkUpdate()}
           />
-          {updateMsg ? <Text style={styles.meta}>{updateMsg}</Text> : null}
+          <Text style={styles.meta}>
+            {updateMsg ?? `BOM ${CONFIG.appVersion} · ${CONFIG.apiUrl.replace(/^https?:\/\//, '')}`}
+          </Text>
         </Section>
       </ThumbScroll>
     </SafeAreaView>
@@ -120,16 +108,10 @@ export function SettingsScreen() {
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: c.bg },
-    card: {
-      backgroundColor: c.surface,
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-      gap: spacing.xs,
-    },
+    profile: { gap: spacing.xs },
     name: { color: c.text, fontSize: font.title, fontWeight: '900' },
     tag: { color: c.accent },
     metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     flex: { flex: 1 },
     meta: { color: c.textMuted, fontSize: font.small },
-    mono: { color: c.textMuted, fontSize: font.small, fontFamily: 'monospace' },
   });

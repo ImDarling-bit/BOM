@@ -42,7 +42,7 @@ export function ThumbTabBar({
 
   return (
     <View style={styles.wrap}>
-      <FlagStripe height={4} />
+      <FlagStripe height={3} />
       <View
         style={[
           styles.bar,
@@ -63,13 +63,8 @@ export function ThumbTabBar({
                 tap();
                 onChange(t.id);
               }}
-              style={({ pressed }) => [
-                styles.tab,
-                selected && styles.tabActive,
-                pressed && styles.pressed,
-              ]}
+              style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
             >
-              {selected ? <View style={styles.indicator} /> : null}
               <Icon
                 name={t.icon}
                 size={26}
@@ -110,18 +105,9 @@ const makeStyles = (c: Colors) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    tabActive: { backgroundColor: c.surfaceHigh },
     pressed: { opacity: 0.6 },
-    label: { color: c.textMuted, fontSize: 13, fontWeight: '700', marginTop: 2 },
-    labelActive: { color: c.accent },
-    indicator: {
-      position: 'absolute',
-      top: 4,
-      width: 22,
-      height: 4,
-      borderRadius: 2,
-      backgroundColor: c.accent,
-    },
+    label: { color: c.textMuted, fontSize: 13, fontWeight: '600', marginTop: 3 },
+    labelActive: { color: c.accent, fontWeight: '800' },
     badge: {
       position: 'absolute',
       top: 4,

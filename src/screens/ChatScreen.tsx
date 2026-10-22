@@ -90,7 +90,7 @@ export function ChatScreen() {
                 style={styles.nearby}
                 accessibilityLabel={`${nearby} manifestant·es autour de toi`}
               >
-                <Icon name="users" size={18} color={colors.onPrimary} strokeWidth={2.6} />
+                <Icon name="users" size={20} color={colors.accent} strokeWidth={2.5} />
                 <Text style={styles.nearbyText}>{nearby}</Text>
               </View>
             ) : null}
@@ -101,13 +101,9 @@ export function ChatScreen() {
           </View>
         }
       />
-      <Text style={styles.subtitle}>
-        {nearby === null
-          ? status === 'online'
-            ? 'Active ta position pour voir combien vous êtes autour.'
-            : `Messages dans un rayon de ${CONFIG.radiusMeters / 1000} km`
-          : `${nearby} autre${nearby > 1 ? 's' : ''} manifestant·e${nearby > 1 ? 's' : ''} connecté·e${nearby > 1 ? 's' : ''} à moins de ${CONFIG.radiusMeters / 1000} km`}
-      </Text>
+      {nearby === null && status === 'online' ? (
+        <Text style={styles.subtitle}>Active ta position pour voir combien vous êtes autour.</Text>
+      ) : null}
 
       <KeyboardAvoidingView style={styles.root} behavior="padding">
         <FlatList
@@ -216,28 +212,18 @@ const makeStyles = (c: Colors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: c.bg },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    nearby: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 5,
-      backgroundColor: c.primary,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs + 2,
-      borderRadius: 999,
-    },
-    nearbyText: { color: c.onPrimary, fontSize: font.body, fontWeight: '900' },
+    nearby: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    nearbyText: { color: c.text, fontSize: font.body, fontWeight: '800' },
     subtitle: { color: c.textMuted, fontSize: font.small, paddingHorizontal: spacing.lg },
     list: { padding: spacing.lg, gap: spacing.sm },
     empty: { color: c.textMuted, fontSize: font.body, textAlign: 'center', padding: spacing.xl },
     bubble: { maxWidth: '85%', borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
-    bubbleMine: { backgroundColor: c.surfaceHigh, borderWidth: 2, borderColor: c.accent },
+    bubbleMine: { backgroundColor: c.surfaceHigh },
     bubbleOther: { backgroundColor: c.surface },
     metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    meta: { color: c.textMuted, fontSize: font.small, fontWeight: '700' },
+    meta: { color: c.textMuted, fontSize: font.small, fontWeight: '600' },
     text: { color: c.text, fontSize: font.body, lineHeight: 25 },
     composer: {
-      borderTopWidth: 1,
-      borderTopColor: c.border,
       paddingVertical: spacing.sm,
       gap: spacing.sm,
       backgroundColor: c.bg,
@@ -254,11 +240,9 @@ const makeStyles = (c: Colors) =>
       justifyContent: 'center',
       paddingHorizontal: spacing.lg,
       borderRadius: radius.pill,
-      borderWidth: 2,
-      borderColor: c.border,
       backgroundColor: c.surface,
     },
-    chipText: { color: c.text, fontSize: font.body, fontWeight: '700' },
+    chipText: { color: c.text, fontSize: font.body, fontWeight: '600' },
     pressed: { opacity: 0.6 },
     inputRow: { gap: spacing.sm, paddingHorizontal: spacing.lg, alignItems: 'flex-end' },
     input: {
@@ -266,8 +250,6 @@ const makeStyles = (c: Colors) =>
       minHeight: touch.primary,
       maxHeight: 120,
       backgroundColor: c.surface,
-      borderColor: c.border,
-      borderWidth: 2,
       borderRadius: radius.md,
       color: c.text,
       fontSize: font.body,

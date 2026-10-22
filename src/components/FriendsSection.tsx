@@ -56,7 +56,7 @@ export function FriendsSection() {
   return (
     <Section
       title="Proches"
-      hint="Ta position précise n’est envoyée qu’aux personnes qui ont ton code. Si tu purges ton téléphone, elles sont alertées avec ta dernière position."
+      hint="Ta position précise ne va qu’aux personnes qui ont ton code. Si tu purges, elles sont alertées."
     >
       <BigButton
         label={
@@ -155,7 +155,7 @@ export function FriendsSection() {
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
     codeCard: {
-      backgroundColor: c.surfaceHigh,
+      backgroundColor: c.surface,
       borderRadius: radius.md,
       padding: spacing.md,
       gap: spacing.sm,
@@ -175,7 +175,7 @@ const makeStyles = (c: Colors) =>
       minHeight: touch.min,
       backgroundColor: c.bg,
       borderColor: c.border,
-      borderWidth: 2,
+      borderWidth: 1,
       borderRadius: radius.md,
       color: c.text,
       fontSize: font.body,
@@ -190,8 +190,6 @@ const makeStyles = (c: Colors) =>
       alignItems: 'center',
       gap: spacing.sm,
       paddingVertical: spacing.sm,
-      borderTopWidth: 1,
-      borderTopColor: c.border,
     },
     friendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     friendName: { color: c.text, fontSize: font.body, fontWeight: '800' },

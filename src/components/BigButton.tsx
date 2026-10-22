@@ -1,7 +1,7 @@
 import { Pressable, type StyleProp, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
-import { type Colors, font, radius, spacing, touch } from '../theme';
-import { useStyles, useTheme } from '../theme/ThemeContext';
+import { font, radius, spacing, touch } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import { tap } from '../utils/haptics';
 import { Icon, type IconName } from './Icon';
 
@@ -33,7 +33,6 @@ export function BigButton({
   accessibilityHint,
 }: Props) {
   const { colors: c } = useTheme();
-  const styles = useStyles(makeStyles);
   const bg: Record<Variant, string> = {
     primary: c.primary,
     secondary: c.surfaceHigh,
@@ -61,8 +60,6 @@ export function BigButton({
       style={({ pressed }) => [
         styles.base,
         { minHeight: large ? touch.primary : touch.min, backgroundColor: bg[variant] },
-        variant === 'secondary' && styles.outlined,
-        (variant === 'primary' || variant === 'danger') && styles.raised,
         pressed && styles.pressed,
         disabled && styles.disabled,
         style,
@@ -89,27 +86,15 @@ export function BigButton({
   );
 }
 
-const makeStyles = (c: Colors) =>
-  StyleSheet.create({
-    base: {
-      borderRadius: radius.md,
-      paddingHorizontal: spacing.lg,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    outlined: {
-      borderWidth: 1.5,
-      borderColor: c.border,
-    },
-    raised: {
-      shadowColor: c.shadow,
-      shadowOpacity: 0.25,
-      shadowRadius: 6,
-      shadowOffset: { width: 0, height: 3 },
-      elevation: 3,
-    },
-    pressed: { opacity: 0.75, transform: [{ scale: 0.97 }] },
-    disabled: { opacity: 0.4 },
-    row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
-    label: { fontWeight: '800', textAlign: 'center', flexShrink: 1 },
-  });
+const styles = StyleSheet.create({
+  base: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: { opacity: 0.75, transform: [{ scale: 0.97 }] },
+  disabled: { opacity: 0.4 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  label: { fontWeight: '700', textAlign: 'center', flexShrink: 1 },
+});

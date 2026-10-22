@@ -47,7 +47,7 @@ const BASE: Record<Scheme, Omit<Colors, 'primary' | 'onPrimary' | 'accent'>> = {
   light: {
     bg: '#F3F3F1',
     surface: '#FFFFFF',
-    surfaceHigh: '#E9E9E6',
+    surfaceHigh: '#E0E0DB',
     border: '#CFCFCB',
     text: '#111111',
     textMuted: '#505050',
@@ -272,8 +272,8 @@ export const radius = {
 /** Ombre douce pour les panneaux flottants. */
 export const elevation = (c: Colors, level = 1) => ({
   shadowColor: c.shadow,
-  shadowOpacity: 0.18 + level * 0.06,
-  shadowRadius: 6 + level * 6,
-  shadowOffset: { width: 0, height: 2 + level * 2 },
-  elevation: 2 + level * 4,
+  shadowOpacity: 0.1 + level * 0.04,
+  shadowRadius: 4 + level * 4,
+  shadowOffset: { width: 0, height: 1 + level },
+  elevation: 1 + level * 2,
 });
